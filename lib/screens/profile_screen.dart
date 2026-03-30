@@ -16,6 +16,8 @@ import 'privacy_security_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import '../main.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'support_screens.dart'; // 🟢 ADD THIS
+import 'about_screens.dart';   // 🟢 ADD THIS
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -470,27 +472,60 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         const SizedBox(height: 24),
 
         // --- SUPPORT SECTION ---
-        _buildSectionHeader(l10n.support ?? "SUPPORT"),
-        _buildGlassSection(isDark, Column(children: [
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedCustomerService, l10n.helpCenter ?? "Help Center", trailing: _buildArrow(), onTap: () {
-            // Navigate to Help Center
-          }),
-          _buildDivider(isDark),
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedMessageQuestion, l10n.contactUs ?? "Contact Us", trailing: _buildArrow(), onTap: () {
-            // Open Email/Chat
-          }),
-        ])),
-        const SizedBox(height: 24),
+            // --- SUPPORT SECTION ---
+            _buildSectionHeader(l10n.support ?? "SUPPORT"),
+            _buildGlassSection(isDark, Column(children: [
+              _buildSettingsTile(
+                isDark,
+                HugeIcons.strokeRoundedCustomerService,
+                l10n.helpCenter ?? "Help Center",
+                trailing: _buildArrow(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())), // 🟢 WIRED UP
+              ),
+              _buildDivider(isDark),
+              _buildSettingsTile(
+                isDark,
+                HugeIcons.strokeRoundedMessageQuestion,
+                l10n.contactUs ?? "Contact Us",
+                trailing: _buildArrow(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen())), // 🟢 WIRED UP
+              ),
+            ])),
+            const SizedBox(height: 24),
 
-        // --- ABOUT SECTION ---
-        _buildSectionHeader(l10n.about ?? "ABOUT"),
-        _buildGlassSection(isDark, Column(children: [
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedInformationCircle, l10n.termsOfService ?? "Terms of Service", trailing: _buildArrow(), onTap: () {}),
-          _buildDivider(isDark),
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedShield01, l10n.privacyPolicy ?? "Privacy Policy", trailing: _buildArrow(), onTap: () {}),
-          _buildDivider(isDark),
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedStar, l10n.rateUs ?? "Rate the App", trailing: _buildArrow(), onTap: () {}),
-        ])),
+            // --- ABOUT SECTION ---
+            _buildSectionHeader(l10n.about ?? "ABOUT"),
+            _buildGlassSection(isDark, Column(children: [
+              _buildSettingsTile(
+                isDark,
+                HugeIcons.strokeRoundedInformationCircle,
+                l10n.termsOfService ?? "Terms of Service",
+                trailing: _buildArrow(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                  title: "Terms of Service",
+                  content: rezrvTermsText,
+                ))), // 🟢 WIRED UP
+              ),
+              _buildDivider(isDark),
+              _buildSettingsTile(
+                isDark,
+                HugeIcons.strokeRoundedShield01,
+                l10n.privacyPolicy ?? "Privacy Policy",
+                trailing: _buildArrow(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                  title: "Privacy Policy",
+                  content: rezrvPrivacyText,
+                ))), // 🟢 WIRED UP
+              ),
+              _buildDivider(isDark),
+              _buildSettingsTile(
+                isDark,
+                HugeIcons.strokeRoundedStar,
+                l10n.rateUs ?? "Rate the App",
+                trailing: _buildArrow(),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RateAppScreen(), fullscreenDialog: true)), // 🟢 WIRED UP
+              ),
+            ])),
 
         // --- VERSION FOOTER ---
         const SizedBox(height: 12),
