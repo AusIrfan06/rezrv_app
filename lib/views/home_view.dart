@@ -82,41 +82,25 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Future<void> _getCurrentLocation() async {
-    // 🟢 ONLY stop searching if we already successfully found a "City, State" (it has a comma)
-    if (UserData.userLocation.value.contains(",")) {
-      return;
-    }
+    // 🟢 REMOVED: The check that stopped the GPS from running if a cache existed.
+    // Now it will ALWAYS fetch your real live location silently in the background!
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      UserData.userLocation.value = "Location disabled";
-      return;
-    }
+    if (!serviceEnabled) return;
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        UserData.userLocation.value = "Permission denied";
-        return;
-      }
+      if (permission == LocationPermission.denied) return;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      UserData.userLocation.value = "Permission denied forever";
-      return;
-    }
-
-    // Clear the error message so the UI shows "Locating..." while it tries again
-    if (UserData.userLocation.value == "Location unavailable") {
-      UserData.userLocation.value = "";
-    }
+    if (permission == LocationPermission.deniedForever) return;
 
     try {
-      Position? position = await Geolocator.getLastKnownPosition();
-      position ??= await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-        timeLimit: const Duration(seconds: 5), // Gives up after 5 seconds to prevent app lag
+      // 🟢 Fetch fresh, real-time location
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium, // Medium is faster and perfect for getting the City
+        timeLimit: const Duration(seconds: 10),
       );
 
       List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
@@ -126,12 +110,11 @@ class _HomeViewState extends State<HomeView> {
         String city = place.locality?.isNotEmpty == true ? place.locality! : (place.subAdministrativeArea ?? "Unknown City");
         String state = place.administrativeArea ?? "Unknown State";
 
-        // 🟢 Success! Update the global state
+        // 🟢 Update the global state! This updates HomeView and ProfileScreen instantly.
         UserData.userLocation.value = "$city, $state";
       }
     } catch (e) {
-      debugPrint("GPS Error: $e");
-      UserData.userLocation.value = "Location unavailable";
+      debugPrint("HomeView GPS Error: $e");
     }
   }
 
