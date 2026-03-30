@@ -136,7 +136,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
       if (confirmed == true) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', true);
-        if (mounted) showGlassToast(context, "Two-Factor Authentication is now ON");
+        if (mounted) showGlassToast(context, "Two-Factor Authentication Enabled");
       }
     } else {
       // Security: Require Biometrics to turn OFF 2FA
@@ -680,7 +680,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   Widget _buildCurrentDeviceTile(bool isDark, String syncedLocation) {
     return InkWell(
-      onTap: () => _showCurrentDeviceDetails(context),
+      onTap: () => _showCurrentDeviceDetails(context, syncedLocation),
       borderRadius: BorderRadius.circular(20),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -721,7 +721,8 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     );
   }
 
-  void _showCurrentDeviceDetails(BuildContext context) {
+  // 🟢 FIXED: Added 'syncedLocation' to the parameters
+  void _showCurrentDeviceDetails(BuildContext context, String syncedLocation) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
@@ -769,7 +770,10 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                 // --- 🟢 Details List ---
                 _buildDetailRow("Model", _deviceName, isDark),
                 _buildDivider(isDark),
-                _buildDetailRow("Location", "$_currentCity, $_currentCountry", isDark),
+
+                // 🟢 FIXED: Uses the synced GPS location instead of the old local IP variables
+                _buildDetailRow("Location", syncedLocation.isNotEmpty ? syncedLocation : "Detecting...", isDark),
+
                 _buildDivider(isDark),
                 _buildDetailRow("Status", "Online", isDark, isStatus: true),
 
