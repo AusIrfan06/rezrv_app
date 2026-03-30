@@ -19,6 +19,8 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'support_screens.dart'; // 🟢 ADD THIS
 import 'about_screens.dart';   // 🟢 ADD THIS
 import 'account_details_screen.dart'; // 🟢 ADD THIS
+import '../services/supabase_service.dart'; // 🟢 ADD THIS
+import 'auth_screen.dart'; // 🟢 ADD THIS
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -541,8 +543,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               const SizedBox(height: 40),
 
               // --- 🟢 UPGRADED LOGOUT BUTTON ---
+              // --- 🟢 UPGRADED SMART LOGIN/LOGOUT BUTTON ---
               GestureDetector(
-                onTap: () {},
+                onTap: () async {
+                  if (SupabaseService.isUserLoggedIn()) {
+                    // User is logged in -> Log them out
+                    await SupabaseService.signOut();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Logged out successfully")),
+                      );
+                      setState(() {}); // Refresh screen to show guest state
+                    }
+                  } else {
+                    // User is a guest -> Route to the new Auth Screen
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
+                    setState(() {}); // Refresh screen to show logged-in state when they come back!
+                  }
+                },
                 child: GlassContainer(
                   useOwnLayer: true,
                   quality: GlassQuality.standard,
@@ -552,18 +570,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15),
+                      // 🟢 Color logic: Blue for Guest Login, Red for Log Out
+                      color: SupabaseService.isUserLoggedIn()
+                          ? Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15)
+                          : Colors.blueAccent.withOpacity(isDark ? 0.1 : 0.15),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5),
+                        color: SupabaseService.isUserLoggedIn()
+                            ? Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5)
+                            : Colors.blueAccent.withOpacity(isDark ? 0.3 : 0.5),
                         width: 1.0,
                       ),
                     ),
                     child: Center(
                       child: Text(
-                        l10n.logOut,
-                        style: const TextStyle(
-                          color: Colors.redAccent,
+                        SupabaseService.isUserLoggedIn() ? l10n.logOut : "Log In / Register",
+                        style: TextStyle(
+                          color: SupabaseService.isUserLoggedIn() ? Colors.redAccent : Colors.blueAccent,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
