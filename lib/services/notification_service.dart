@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../data/notification_data.dart'; // 🟢 THE MISSING IMPORT
+import '../data/notification_data.dart';
+import '../data/user_data.dart'; // 🟢 REQUIRED: To check if App Lock is enabled
 import '../main.dart'; // To access navigatorKey and isBypassingLock
-import '../screens/booking_ticket_screen.dart'; // To route directly to the ticket
+import '../screens/booking_ticket_screen.dart';
+import '../views/home_view.dart'; // 🟢 REQUIRED: To put Home at the bottom
+import '../screens/app_lock_screen.dart'; // 🟢 REQUIRED: To enforce security
 
 class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-    // 🟢 Points directly to the file you pasted in the drawable folder!
     const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@drawable/ic_notification');
 
     const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
@@ -30,26 +32,52 @@ class LocalNotificationService {
         if (response.payload != null && response.payload!.startsWith('{')) {
           final data = jsonDecode(response.payload!);
 
-          // Bypass app lock to show the ticket
+          // 🟢 Stop main.dart from triggering its own random lock screen
           isBypassingLock = true;
 
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (context) => BookingTicketScreen(
-                shopName: data['shopName'],
-                category: data['category'],
-                shopImage: data['shopImage'],
-                providerName: data['providerName'],
-                date: data['date'],
-                time: data['time'],
-                totalPrice: data['totalPrice'],
-                bookingId: data['bookingId'],
+          final ticketScreen = BookingTicketScreen(
+            shopName: data['shopName'],
+            category: data['category'],
+            shopImage: data['shopImage'],
+            providerName: data['providerName'],
+            date: data['date'],
+            time: data['time'],
+            totalPrice: data['totalPrice'],
+            bookingId: data['bookingId'],
+          );
+
+          // 🟢 THE FIX: Manually build the perfect navigation stack!
+          if (UserData.appLockEnabled.value) {
+            // 1. Wipe the history and put Home Screen at the bottom
+            navigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomeView()),
+                  (route) => false,
+            );
+
+            // 2. Put the Ticket Screen on top of the Home Screen
+            navigatorKey.currentState?.push(
+              MaterialPageRoute(builder: (_) => ticketScreen),
+            );
+
+            // 3. Put the App Lock on the very top to block them
+            navigatorKey.currentState?.push(
+              MaterialPageRoute(
+                builder: (ctx) => AppLockScreen(
+                  onUnlocked: () {
+                    Navigator.pop(ctx); // Removes the lock screen, revealing the ticket!
+                    isBypassingLock = false; // Re-enable normal security
+                  },
+                ),
               ),
-            ),
-          ).then((_) {
-            // Re-enable app lock when leaving the ticket
-            isBypassingLock = false;
-          });
+            );
+          } else {
+            // If security is disabled, just show the ticket normally
+            navigatorKey.currentState?.push(
+              MaterialPageRoute(builder: (_) => ticketScreen),
+            ).then((_) {
+              isBypassingLock = false;
+            });
+          }
         }
       },
     );
