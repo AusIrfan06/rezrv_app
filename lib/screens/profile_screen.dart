@@ -18,6 +18,7 @@ import '../main.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'support_screens.dart'; // 🟢 ADD THIS
 import 'about_screens.dart';   // 🟢 ADD THIS
+import 'account_details_screen.dart'; // 🟢 ADD THIS
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -304,279 +305,276 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       ),
 
       // 🟢 2. Your actual scrolling content
-      SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(children: [
-            const SizedBox(height: 20),
+          // 🟢 2. Your actual scrolling content
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(children: [
+              const SizedBox(height: 20),
 
-            // --- 🟢 RESTORED PROFILE HEADER ---
-            AnimatedBuilder(
-                animation: Listenable.merge([UserData.userName, UserData.userEmail, UserData.userProfilePic, UserData.userLocation]),
-                builder: (context, _) {
-                  final hasPic = UserData.userProfilePic.value.isNotEmpty;
-                  final name = UserData.userName.value.isNotEmpty ? UserData.userName.value : "Guest User";
-                  final email = UserData.userEmail.value.isNotEmpty ? UserData.userEmail.value : "Set up your profile";
+              // --- 🟢 RESTORED PROFILE HEADER ---
+              AnimatedBuilder(
+                  animation: Listenable.merge([UserData.userName, UserData.userEmail, UserData.userProfilePic, UserData.userLocation]),
+                  builder: (context, _) {
+                    final hasPic = UserData.userProfilePic.value.isNotEmpty;
+                    final name = UserData.userName.value.isNotEmpty ? UserData.userName.value : "Guest User";
+                    final email = UserData.userEmail.value.isNotEmpty ? UserData.userEmail.value : "Set up your profile";
+                    final locationStr = UserData.userLocation.value.isEmpty ? "Locating..." : UserData.userLocation.value;
 
-                  // Safely grab the synced location
-                  final locationStr = UserData.userLocation.value.isEmpty ? "Locating..." : UserData.userLocation.value;
+                    return Center(
+                        child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _showImageSourceSelector(context),
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2)
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 50,
+                                        backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                                        backgroundImage: hasPic
+                                            ? (UserData.userProfilePic.value.startsWith('http')
+                                            ? NetworkImage(UserData.userProfilePic.value) as ImageProvider
+                                            : FileImage(File(UserData.userProfilePic.value)) as ImageProvider)
+                                            : null,
+                                        child: !hasPic ? const HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.grey, size: 40) : null,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 4, right: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                                        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 4),
+                              Text(email, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                              const SizedBox(height: 8),
 
-                  return Center(
-                      child: Column(
-                          children: [
-                            // --- 🟢 TAPPABLE PROFILE AVATAR ---
-                            GestureDetector(
-                              onTap: () => _showImageSourceSelector(context), // 🟢 Updated to the glass dialog
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
+                              GestureDetector(
+                                onTap: _forceRefreshLocation,
+                                behavior: HitTestBehavior.opaque,
+                                child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2)
+                                        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(20)
                                     ),
-                                    child: CircleAvatar(
-                                      radius: 50,
-                                      backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                      backgroundImage: hasPic
-                                          ? (UserData.userProfilePic.value.startsWith('http')
-                                          ? NetworkImage(UserData.userProfilePic.value) as ImageProvider
-                                          : FileImage(File(UserData.userProfilePic.value)) as ImageProvider)
-                                          : null,
-                                      child: !hasPic ? const HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.grey, size: 40) : null,
-                                    ),
-                                  ),
-                                  // Tiny Edit Icon
-                                  Positioned(
-                                    bottom: 4, right: 4,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                                      child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-                            const SizedBox(height: 4),
-                            Text(email, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                            const SizedBox(height: 8),
+                                    child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, color: Colors.blue, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(locationStr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.refresh_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 12),
+                                        ]
+                                    )
+                                ),
+                              )
+                            ]
+                        )
+                    );
+                  }
+              ),
+              const SizedBox(height: 40),
 
-                            // --- 🟢 TAPPABLE LOCATION PILL ---
-                            GestureDetector(
-                              onTap: _forceRefreshLocation,
-                              behavior: HitTestBehavior.opaque,
-                              child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                      color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, color: Colors.blue, size: 14),
-                                        const SizedBox(width: 4),
-                                        Text(locationStr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                        const SizedBox(width: 6),
-                                        Icon(Icons.refresh_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 12),
-                                      ]
-                                  )
-                              ),
-                            )
-                          ]
-                      )
-                  );
-                }
-            ),
-            const SizedBox(height: 40),
+              // --- ACCOUNT SECTION (🟢 MOVED TO TOP & ADDED NEW SCREEN) ---
+              _buildSectionHeader(l10n.account),
+              _buildGlassSection(isDark, Column(children: [
+                // 🟢 NEW: Account Details Link
+                _buildSettingsTile(isDark, HugeIcons.strokeRoundedUserEdit01, "Account Details", trailing: _buildArrow(), onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsScreen()));
+                }),
+                _buildDivider(isDark),
+                _buildSettingsTile(isDark, HugeIcons.strokeRoundedUser, l10n.personalInformation, trailing: _buildArrow(), onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalInfoScreen()));
+                }),
+                _buildDivider(isDark),
+                _buildSettingsTile(isDark, HugeIcons.strokeRoundedCreditCard, l10n.paymentMethods, trailing: _buildArrow(), onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
+                }),
+                _buildDivider(isDark),
+                _buildSettingsTile(isDark, HugeIcons.strokeRoundedLock, l10n.privacySecurity, trailing: _buildArrow(), onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
+                })
+              ])),
+              const SizedBox(height: 24),
 
-            // --- PREFERENCES SECTION ---
-        // --- PREFERENCES SECTION ---
-        _buildSectionHeader(l10n.preferences),
-        _buildGlassSection(isDark, Column(children: [
-          _buildThemeToggleTile(context, isDark, l10n.darkMode),
-          _buildDivider(isDark),
-          _buildSettingsTile(
-            isDark,
-            HugeIcons.strokeRoundedGlobe02,
-            l10n.language,
-            trailing: ValueListenableBuilder<Locale>(
-                valueListenable: appLocaleNotifier,
-                builder: (context, locale, _) {
-                  String displayLanguage = locale.languageCode == 'ms' ? l10n.malay : l10n.english;
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(displayLanguage, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                      const SizedBox(width: 8),
-                      _buildArrow(),
-                    ],
-                  );
-                }
-            ),
-            onTap: () => _showLanguageSelector(context),
-          ),
-        ])),
-        const SizedBox(height: 24),
+              // --- PREFERENCES SECTION (🟢 MOVED DOWN) ---
+              _buildSectionHeader(l10n.preferences),
+              _buildGlassSection(isDark, Column(children: [
+                _buildThemeToggleTile(context, isDark, l10n.darkMode),
+                _buildDivider(isDark),
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedGlobe02,
+                  l10n.language,
+                  trailing: ValueListenableBuilder<Locale>(
+                      valueListenable: appLocaleNotifier,
+                      builder: (context, locale, _) {
+                        String displayLanguage = locale.languageCode == 'ms' ? l10n.malay : l10n.english;
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(displayLanguage, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                            const SizedBox(width: 8),
+                            _buildArrow(),
+                          ],
+                        );
+                      }
+                  ),
+                  onTap: () => _showLanguageSelector(context),
+                ),
+              ])),
+              const SizedBox(height: 24),
 
-        // --- INVITE BANNER ---
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
-          ),
-          child: Row(
-            children: [
-              const HugeIcon(icon: HugeIcons.strokeRoundedGift, color: Colors.white, size: 40),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // --- INVITE BANNER ---
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                ),
+                child: Row(
                   children: [
-                    const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedGift, color: Colors.white, size: 40),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-        // --- ACCOUNT SECTION ---
-        _buildSectionHeader(l10n.account),
-        _buildGlassSection(isDark, Column(children: [
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedUser, l10n.personalInformation, trailing: _buildArrow(), onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalInfoScreen()));
-          }),
-          _buildDivider(isDark),
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedCreditCard, l10n.paymentMethods, trailing: _buildArrow(), onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
-          }),
-          _buildDivider(isDark),
-          _buildSettingsTile(isDark, HugeIcons.strokeRoundedLock, l10n.privacySecurity, trailing: _buildArrow(), onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
-          })
-        ])),
-        const SizedBox(height: 24),
-
-        // --- SUPPORT SECTION ---
-            // --- SUPPORT SECTION ---
-            _buildSectionHeader(l10n.support ?? "SUPPORT"),
-            _buildGlassSection(isDark, Column(children: [
-              _buildSettingsTile(
-                isDark,
-                HugeIcons.strokeRoundedCustomerService,
-                l10n.helpCenter ?? "Help Center",
-                trailing: _buildArrow(),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())), // 🟢 WIRED UP
-              ),
-              _buildDivider(isDark),
-              _buildSettingsTile(
-                isDark,
-                HugeIcons.strokeRoundedMessageQuestion,
-                l10n.contactUs ?? "Contact Us",
-                trailing: _buildArrow(),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen())), // 🟢 WIRED UP
-              ),
-            ])),
-            const SizedBox(height: 24),
-
-            // --- ABOUT SECTION ---
-            _buildSectionHeader(l10n.about ?? "ABOUT"),
-            _buildGlassSection(isDark, Column(children: [
-              _buildSettingsTile(
-                isDark,
-                HugeIcons.strokeRoundedInformationCircle,
-                l10n.termsOfService ?? "Terms of Service",
-                trailing: _buildArrow(),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
-                  title: "Terms of Service",
-                  content: rezrvTermsText,
-                ))), // 🟢 WIRED UP
-              ),
-              _buildDivider(isDark),
-              _buildSettingsTile(
-                isDark,
-                HugeIcons.strokeRoundedShield01,
-                l10n.privacyPolicy ?? "Privacy Policy",
-                trailing: _buildArrow(),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
-                  title: "Privacy Policy",
-                  content: rezrvPrivacyText,
-                ))), // 🟢 WIRED UP
-              ),
-              _buildDivider(isDark),
-              _buildSettingsTile(
-                isDark,
-                HugeIcons.strokeRoundedStar,
-                l10n.rateUs ?? "Rate the App",
-                trailing: _buildArrow(),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RateAppScreen(), fullscreenDialog: true)), // 🟢 WIRED UP
-              ),
-            ])),
-
-        // --- VERSION FOOTER ---
-        const SizedBox(height: 12),
-        Center(
-          child: Column(
-            children: [
-              Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withOpacity(0.3), fontSize: 10)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-
-        // --- 🟢 UPGRADED LOGOUT BUTTON ---
-          GestureDetector(
-            onTap: () {
-              // Add logout logic here
-            },
-            child: GlassContainer(
-              useOwnLayer: true,
-              quality: GlassQuality.standard,
-              shape: LiquidRoundedSuperellipse(borderRadius: 24.0),
-              settings: _getGlassSettings(isDark, blur: 10),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5),
-                    width: 1.0,
-                  ),
+              // --- SUPPORT SECTION ---
+              _buildSectionHeader(l10n.support ?? "SUPPORT"),
+              _buildGlassSection(isDark, Column(children: [
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedCustomerService,
+                  l10n.helpCenter ?? "Help Center",
+                  trailing: _buildArrow(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
                 ),
-                child: Center(
-                  child: Text(
-                    l10n.logOut,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                _buildDivider(isDark),
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedMessageQuestion,
+                  l10n.contactUs ?? "Contact Us",
+                  trailing: _buildArrow(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen())),
+                ),
+              ])),
+              const SizedBox(height: 24),
+
+              // --- ABOUT SECTION ---
+              _buildSectionHeader(l10n.about ?? "ABOUT"),
+              _buildGlassSection(isDark, Column(children: [
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedInformationCircle,
+                  l10n.termsOfService ?? "Terms of Service",
+                  trailing: _buildArrow(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                    title: "Terms of Service",
+                    content: rezrvTermsText,
+                  ))),
+                ),
+                _buildDivider(isDark),
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedShield01,
+                  l10n.privacyPolicy ?? "Privacy Policy",
+                  trailing: _buildArrow(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                    title: "Privacy Policy",
+                    content: rezrvPrivacyText,
+                  ))),
+                ),
+                _buildDivider(isDark),
+                _buildSettingsTile(
+                  isDark,
+                  HugeIcons.strokeRoundedStar,
+                  l10n.rateUs ?? "Rate the App",
+                  trailing: _buildArrow(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RateAppScreen(), fullscreenDialog: true)),
+                ),
+              ])),
+
+              // --- VERSION FOOTER ---
+              const SizedBox(height: 12),
+              Center(
+                child: Column(
+                  children: [
+                    Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withOpacity(0.3), fontSize: 10)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // --- 🟢 UPGRADED LOGOUT BUTTON ---
+              GestureDetector(
+                onTap: () {},
+                child: GlassContainer(
+                  useOwnLayer: true,
+                  quality: GlassQuality.standard,
+                  shape: LiquidRoundedSuperellipse(borderRadius: 24.0),
+                  settings: _getGlassSettings(isDark, blur: 10),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        l10n.logOut,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 40),
+            ],
             ),
-          ),
-          const SizedBox(height: 40),
-          ],
-          ),
           ),
         ],
       ),

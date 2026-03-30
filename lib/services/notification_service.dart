@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../data/notification_data.dart';
-import '../data/user_data.dart'; // 🟢 REQUIRED: To check if App Lock is enabled
-import '../main.dart'; // To access navigatorKey and isBypassingLock
+import '../main.dart';
 import '../screens/booking_ticket_screen.dart';
-import '../views/home_view.dart'; // 🟢 REQUIRED: To put Home at the bottom
-import '../screens/app_lock_screen.dart'; // 🟢 REQUIRED: To enforce security
+import '../main_screen.dart';
 
 class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -32,9 +30,6 @@ class LocalNotificationService {
         if (response.payload != null && response.payload!.startsWith('{')) {
           final data = jsonDecode(response.payload!);
 
-          // 🟢 Stop main.dart from triggering its own random lock screen
-          isBypassingLock = true;
-
           final ticketScreen = BookingTicketScreen(
             shopName: data['shopName'],
             category: data['category'],
@@ -46,32 +41,17 @@ class LocalNotificationService {
             bookingId: data['bookingId'],
           );
 
-          // 🟢 THE FIX: Manually build the perfect navigation stack!
-          if (UserData.appLockEnabled.value) {
-            // 1. Wipe the history and put Home Screen at the bottom
+          // 🟢 Orchestrate the routing securely
+          if (isAppCurrentlyLocked) {
+            // App is locked! Just hand the ticket to main.dart and let the user unlock.
+            pendingNotificationRoute = ticketScreen;
+          } else {
+            // App is already unlocked. Safely wipe and stack instantly.
+            isBypassingLock = true;
             navigatorKey.currentState?.pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const HomeView()),
+              MaterialPageRoute(builder: (_) => const MainScreen()),
                   (route) => false,
             );
-
-            // 2. Put the Ticket Screen on top of the Home Screen
-            navigatorKey.currentState?.push(
-              MaterialPageRoute(builder: (_) => ticketScreen),
-            );
-
-            // 3. Put the App Lock on the very top to block them
-            navigatorKey.currentState?.push(
-              MaterialPageRoute(
-                builder: (ctx) => AppLockScreen(
-                  onUnlocked: () {
-                    Navigator.pop(ctx); // Removes the lock screen, revealing the ticket!
-                    isBypassingLock = false; // Re-enable normal security
-                  },
-                ),
-              ),
-            );
-          } else {
-            // If security is disabled, just show the ticket normally
             navigatorKey.currentState?.push(
               MaterialPageRoute(builder: (_) => ticketScreen),
             ).then((_) {
@@ -85,7 +65,6 @@ class LocalNotificationService {
     await _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
   }
 
-  // Call this right after the user clicks "Pay" or "Confirm"
   static Future<void> showBookingConfirmed({
     required String shopName,
     required String category,
@@ -96,20 +75,31 @@ class LocalNotificationService {
     required String totalPrice,
     required String bookingId,
   }) async {
+
+    // 🟢 Create a Group Key so Android and iOS stack them cleanly
+    const String groupKey = 'com.rezrv.app.BOOKING_GROUP';
+
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'booking_channel', 'Bookings',
       channelDescription: 'Notifications for confirmed bookings',
       importance: Importance.max,
       priority: Priority.high,
       color: Colors.blue,
+      groupKey: groupKey, // Link them to the group
     );
 
-    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      threadIdentifier: 'booking_group', // iOS grouping equivalent
+    );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     final String title = "Booking Confirmed! 🎉";
     final String message = "Your appointment at $shopName has been successfully reserved.";
 
-    // Pack the data into a hidden JSON string
     final payloadData = jsonEncode({
       'shopName': shopName,
       'category': category,
@@ -121,15 +111,37 @@ class LocalNotificationService {
       'bookingId': bookingId,
     });
 
+    // 1. Show the individual notification with a UNIQUE ID so they don't overwrite each other
+    int uniqueId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    // 🟢 FIXED: Using strict named arguments!
     await _notificationsPlugin.show(
-      id: 0,
+      id: uniqueId,
       title: title,
       body: message,
       notificationDetails: platformDetails,
-      payload: payloadData, // Attach the hidden data here
+      payload: payloadData,
     );
 
-    // Save it to our in-app Glassmorphic Screen
+    // 2. Show the invisible "Group Summary" to activate Android InboxStyle stacking
+    const AndroidNotificationDetails summaryDetails = AndroidNotificationDetails(
+      'booking_channel', 'Bookings',
+      channelDescription: 'Notifications for confirmed bookings',
+      importance: Importance.max,
+      priority: Priority.high,
+      color: Colors.blue,
+      groupKey: groupKey,
+      setAsGroupSummary: true, // This magically bundles them!
+    );
+
+    // 🟢 FIXED: Using strict named arguments!
+    await _notificationsPlugin.show(
+      id: 0, // ID 0 is strictly reserved for the parent bundle
+      title: '',
+      body: '',
+      notificationDetails: const NotificationDetails(android: summaryDetails),
+    );
+
     await NotificationData.addNotification(
         type: 'booking',
         title: title,

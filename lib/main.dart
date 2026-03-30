@@ -12,22 +12,22 @@ import '../screens/app_lock_screen.dart';
 import '../services/notification_service.dart';
 import '../data/notification_data.dart';
 
-// 🟢 1. Create a Global Key to control navigation from anywhere
+// 🟢 GLOBAL VARIABLES FOR CLEAN ROUTING
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 bool isBypassingLock = false;
+bool isAppCurrentlyLocked = false;
+Widget? pendingNotificationRoute;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 🟢 Add this line to load your saved profile data
   await UserData.loadSavedData();
   await NotificationData.loadNotifications();
   await LocalNotificationService.initialize();
-  runApp(const RezrvApp(startLocked: false)); // or your app entry
+  runApp(const RezrvApp(startLocked: false));
 }
 
-// 🟢 2. Convert to StatefulWidget to use Lifecycle Observer
 class RezrvApp extends StatefulWidget {
-  final bool startLocked; // 🟢 Accept the pre-fetched status
+  final bool startLocked;
   const RezrvApp({super.key, required this.startLocked});
 
   @override
@@ -38,12 +38,13 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  late bool _isLocked; // 🟢 Changed to 'late'
+  late bool _isLocked;
 
   @override
   void initState() {
     super.initState();
-    _isLocked = widget.startLocked; // 🟢 Initialize instantly from pre-fetch
+    _isLocked = widget.startLocked;
+    isAppCurrentlyLocked = widget.startLocked;
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -56,33 +57,46 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-
     if (isBypassingLock) return;
-
-    // 🟢 Lock the app when it is hidden (paused)
     if (state == AppLifecycleState.paused) {
       _lockApp();
     }
   }
 
   void _lockApp() {
-    // 🟢 Use global variables instead of re-reading disk
     final bool isEnabled = UserData.appLockEnabled.value;
     final int timeout = UserData.appLockTimeout.value;
 
-    // Only trigger if enabled and timeout is set to "Immediately" (0)
     if (isEnabled && timeout == 0 && !_isLocked) {
-      debugPrint("🔒 App Locked via Lifecycle Notifier");
-
+      isAppCurrentlyLocked = true;
       setState(() => _isLocked = true);
 
-      // Reset navigation to the lock screen
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => AppLockScreen(
-          onUnlocked: () => setState(() => _isLocked = false),
+          onUnlocked: _handleUnlock, // 🟢 Route cleanly using the new function below
         )),
             (route) => false,
       );
+    }
+  }
+
+  // 🟢 CENTRALIZED ROUTING HUB
+  void _handleUnlock() {
+    isAppCurrentlyLocked = false;
+    setState(() => _isLocked = false);
+
+    // 1. Always put MainScreen at the absolute bottom
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+          (route) => false,
+    );
+
+    // 2. If a notification was waiting for you, pop the ticket cleanly on top!
+    if (pendingNotificationRoute != null) {
+      navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => pendingNotificationRoute!)
+      );
+      pendingNotificationRoute = null; // Clear it out
     }
   }
 
@@ -98,8 +112,6 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
               navigatorKey: navigatorKey,
               debugShowCheckedModeBanner: false,
               title: 'Rezrv',
-
-              // 🟢 THEME RESTORED!
               themeMode: currentTheme,
               theme: ThemeData(
                 brightness: Brightness.light,
@@ -113,22 +125,14 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
                 scaffoldBackgroundColor: const Color(0xFF121212),
                 fontFamily: 'Inter',
               ),
-
               locale: currentLocale,
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
-
-              // 🟢 ADD THIS: Maps the string to the actual screen!
               routes: {
-                '/bookings': (context) => const MainScreen(), // Or BookingsView() if you prefer it to open standalone
+                '/bookings': (context) => const MainScreen(),
               },
-
-              // 🟢 INSTANT ROUTING: No loading screens
-              // 🟢 This checks the initial state from main()
               home: widget.startLocked && _isLocked
-                  ? AppLockScreen(onUnlocked: () {
-                setState(() => _isLocked = false);
-              })
+                  ? AppLockScreen(onUnlocked: _handleUnlock) // 🟢 Use the hub here too
                   : const MainScreen(),
             );
           },
