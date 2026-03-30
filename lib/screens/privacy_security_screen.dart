@@ -127,19 +127,19 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   Future<void> _handle2FAToggle(bool enable) async {
     if (enable) {
-      // 🟢 Logic: Show a Glassmorphic Setup Dialog
+      // 🟢 Logic: Show the Glassmorphic Setup Dialog
       bool? confirmed = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.black.withOpacity(0.4), // 🟢 ADDED: Dims the background
         builder: (context) => _build2FASetupDialog(context),
       );
 
       if (confirmed == true) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', true);
-        // 🟢 FIXED: Swapped to the new global glass helper
-        if (mounted) showGlassToast(context, "Two-Factor Authentication Enabled");
+        if (mounted) showGlassToast(context, "Two-Factor Authentication is now ON");
       }
     } else {
-      // 🟢 Security: Require Biometrics to turn OFF 2FA
+      // Security: Require Biometrics to turn OFF 2FA
       isBypassingLock = true;
       bool authenticated = await _localAuth.authenticate(
         localizedReason: 'Please verify to disable 2FA security',
@@ -148,30 +148,122 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
       if (authenticated) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', false);
-        // 🟢 FIXED: Swapped to the new global glass helper
         if (mounted) showGlassToast(context, "2FA Security Disabled");
       }
     }
   }
 
-  // Helper for 2FA UI
+  // Helper for Glassmorphic 2FA UI
   Widget _build2FASetupDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-      child: AlertDialog(
-        backgroundColor: isDark ? Colors.black87 : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("Enable 2FA?", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text("We will use your registered number (${UserData.userPhone.value}) to send verification codes."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Enable"),
+      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🟢 Phone Security Icon
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSmartPhone01,
+                    color: Colors.blueAccent,
+                    size: 28
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 🟢 Title
+              Text(
+                "Enable 2FA?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Inter',
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 🟢 Content
+              Text(
+                "We will use your registered number (${UserData.userPhone.value}) to send verification codes.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // 🟢 Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                      ),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        "Cancel",
+                        style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Inter'
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                      ),
+                      onPressed: () => Navigator.pop(context, true), // 🟢 Returns 'true' to enable
+                      child: const Text(
+                        "Enable",
+                        style: TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter'
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
