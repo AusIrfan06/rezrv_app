@@ -153,18 +153,28 @@ class SupabaseService {
   }
 
   // 🟢 7. UPDATE PASSWORD
-  static Future<String?> updatePassword(String newPassword) async {
+  // 🟢 7. UPDATE PASSWORD (SECURE)
+  static Future<String?> updatePassword({required String currentPassword, required String newPassword}) async {
     try {
-      await _supabase.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      final user = _supabase.auth.currentUser;
+      if (user == null || user.email == null) return "User not logged in";
+
+      // 1. Verify the current password by doing a "silent login"
+      try {
+        await _supabase.auth.signInWithPassword(email: user.email!, password: currentPassword);
+      } on AuthException catch (_) {
+        return "Incorrect current password."; // 🔴 Blocks the update!
+      }
+
+      // 2. If the silent login succeeds, they know the old password. Update to the new one!
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
       return null; // Success
     } catch (e) {
       debugPrint("Update Password Error: $e");
-      return "Failed to update password. You may need to log out and log back in to verify your session.";
+      return "Failed to update password.";
     }
   }
-  
+
   // 🟢 6. AUTO-SYNC ON STARTUP
   static Future<void> syncUserOnStartup() async {
     final user = _supabase.auth.currentUser;

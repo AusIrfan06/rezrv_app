@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../data/user_data.dart';
 import '../services/supabase_service.dart';
-import '../utils/glass_toast.dart'; // 🟢 INCLUDES YOUR NEW TOASTS
+import '../utils/glass_toast.dart';
 
 class AccountDetailsScreen extends StatefulWidget {
   const AccountDetailsScreen({super.key});
@@ -19,7 +19,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  late TextEditingController _currentPasswordController;
+  late TextEditingController _currentPasswordController; // 🟢 RESTORED
   late TextEditingController _newPasswordController;
 
   bool _isLoading = false;
@@ -50,25 +50,35 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // 1. Save general profile data (Name, Phone)
-      // Note: We don't usually let users change email without an email verification flow,
-      // but we update the local state here anyway!
+      // 1. Save general profile data locally (Email is locked, but we save Name/Phone)
       await UserData.updateProfile(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
       );
 
-      // 2. 🟢 PASSWORD UPDATE LOGIC
+      // 2. PASSWORD UPDATE LOGIC
+      final currentPass = _currentPasswordController.text.trim();
       final newPass = _newPasswordController.text.trim();
 
-      // Only try to update the password if they actually typed something new
+      // Only attempt password update if they filled out the fields
       if (newPass.isNotEmpty) {
-        final passError = await SupabaseService.updatePassword(newPass);
+        // If they wrote a new password but forgot the current one
+        if (currentPass.isEmpty) {
+          setState(() => _isLoading = false);
+          showGlassToast(context, "Please enter your current password to confirm changes.", isError: true);
+          return;
+        }
+
+        // 🟢 Talk to Supabase
+        final passError = await SupabaseService.updatePassword(
+            currentPassword: currentPass,
+            newPassword: newPass
+        );
 
         if (passError != null) {
           setState(() => _isLoading = false);
-          if (mounted) showGlassToast(context, passError, isError: true);
+          showGlassToast(context, passError, isError: true);
           return; // Stop here if password fails
         }
       }
@@ -76,23 +86,22 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
       setState(() => _isLoading = false);
 
       if (mounted) {
-        showGlassToast(context, "Account updated successfully!"); // 🟢 GLASSS TOAST
+        showGlassToast(context, "Account updated successfully!");
         Navigator.pop(context);
       }
     }
   }
 
-  // 🟢 PASSWORD VALIDATOR (Regex Rules)
-  String? _validatePassword(String? value) {
+  // 🟢 NEW PASSWORD VALIDATOR (Regex Rules)
+  String? _validateNewPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return null; // It's okay to leave blank if they don't want to change it
+      return null; // OK if left blank (they aren't changing it)
     }
 
     // Rule: Min 8 chars, 1 Upper, 1 Lower, 1 Number/Symbol
-    final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*?[0-9!@#\$&*~]).{8,}$');
-
+    final regex = RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*[\d\W]).{8,}$');
     if (!regex.hasMatch(value)) {
-      return "Must be 8+ chars, include upper, lower & number/symbol";
+      return "8+ chars, upper, lower & number/symbol";
     }
     return null;
   }
@@ -127,14 +136,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
       ),
       body: Stack(
         children: [
-          Positioned(
-            top: -100, right: -50,
-            child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.05 : 0.1))),
-          ),
-          Positioned(
-            bottom: 100, left: -50,
-            child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.05 : 0.1))),
-          ),
+          Positioned(top: -100, right: -50, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.05 : 0.1)))),
+          Positioned(bottom: 100, left: -50, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.05 : 0.1)))),
 
           SafeArea(
             child: SingleChildScrollView(
@@ -161,7 +164,6 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                           children: [
                             _buildPremiumInput(isDark: isDark, label: "Full Name", controller: _nameController, icon: HugeIcons.strokeRoundedUser),
                             const SizedBox(height: 16),
-                            // Email is usually locked after sign up to prevent DB conflicts, so we make it read-only
                             _buildPremiumInput(isDark: isDark, label: "Email Address (Read Only)", controller: _emailController, icon: HugeIcons.strokeRoundedMail01, keyboardType: TextInputType.emailAddress, readOnly: true),
                             const SizedBox(height: 16),
                             _buildPremiumInput(isDark: isDark, label: "Phone Number", controller: _phoneController, icon: HugeIcons.strokeRoundedCall02, keyboardType: TextInputType.phone),
@@ -185,10 +187,16 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                         ),
                         child: Column(
                           children: [
+                            // 🟢 RESTORED CURRENT PASSWORD
+                            _buildPremiumInput(
+                              isDark: isDark, label: "Current Password", controller: _currentPasswordController, icon: HugeIcons.strokeRoundedLockPassword,
+                              isPassword: true, obscureText: _obscureCurrentPass, onToggleObscure: () => setState(() => _obscureCurrentPass = !_obscureCurrentPass),
+                            ),
+                            const SizedBox(height: 16),
                             _buildPremiumInput(
                               isDark: isDark, label: "New Password", controller: _newPasswordController, icon: HugeIcons.strokeRoundedLockKey,
                               isPassword: true, obscureText: _obscureNewPass, onToggleObscure: () => setState(() => _obscureNewPass = !_obscureNewPass),
-                              validator: _validatePassword, // 🟢 APPLIES THE REGEX RULES
+                              validator: _validateNewPassword, // 🟢 APPLIES REGEX
                             ),
                           ],
                         ),
@@ -225,7 +233,6 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     );
   }
 
-  // 🟢 UPGRADED: Added 'validator' and 'readOnly' properties
   Widget _buildPremiumInput({required bool isDark, required String label, required TextEditingController controller, required dynamic icon, TextInputType keyboardType = TextInputType.text, bool isPassword = false, bool obscureText = false, VoidCallback? onToggleObscure, String? Function(String?)? validator, bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +253,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
               prefixIcon: Padding(padding: const EdgeInsets.only(right: 14.0), child: HugeIcon(icon: icon, color: Colors.grey, size: 20)),
               prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               border: InputBorder.none,
-              errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11), // Formats regex errors beautifully
+              errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11),
               suffixIcon: isPassword ? IconButton(
                 icon: HugeIcon(icon: obscureText ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView, color: Colors.grey, size: 20),
                 onPressed: onToggleObscure,
