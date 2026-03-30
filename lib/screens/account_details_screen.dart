@@ -19,7 +19,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  late TextEditingController _currentPasswordController; // 🟢 RESTORED
+  late TextEditingController _currentPasswordController;
   late TextEditingController _newPasswordController;
 
   bool _isLoading = false;
@@ -50,27 +50,22 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // 1. Save general profile data locally (Email is locked, but we save Name/Phone)
       await UserData.updateProfile(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
       );
 
-      // 2. PASSWORD UPDATE LOGIC
       final currentPass = _currentPasswordController.text.trim();
       final newPass = _newPasswordController.text.trim();
 
-      // Only attempt password update if they filled out the fields
       if (newPass.isNotEmpty) {
-        // If they wrote a new password but forgot the current one
         if (currentPass.isEmpty) {
           setState(() => _isLoading = false);
           showGlassToast(context, "Please enter your current password to confirm changes.", isError: true);
           return;
         }
 
-        // 🟢 Talk to Supabase
         final passError = await SupabaseService.updatePassword(
             currentPassword: currentPass,
             newPassword: newPass
@@ -79,7 +74,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         if (passError != null) {
           setState(() => _isLoading = false);
           showGlassToast(context, passError, isError: true);
-          return; // Stop here if password fails
+          return;
         }
       }
 
@@ -92,13 +87,11 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     }
   }
 
-  // 🟢 NEW PASSWORD VALIDATOR (Regex Rules)
   String? _validateNewPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return null; // OK if left blank (they aren't changing it)
+      return null;
     }
 
-    // Rule: Min 8 chars, 1 Upper, 1 Lower, 1 Number/Symbol
     final regex = RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*[\d\W]).{8,}$');
     if (!regex.hasMatch(value)) {
       return "8+ chars, upper, lower & number/symbol";
@@ -125,14 +118,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          "Account Details",
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: isDark ? Colors.white : Colors.black87),
-        ),
-        leading: IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, color: isDark ? Colors.white70 : Colors.black54, size: 24),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text("Account Details", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: isDark ? Colors.white : Colors.black87)),
+        leading: IconButton(icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, color: isDark ? Colors.white70 : Colors.black54, size: 24), onPressed: () => Navigator.pop(context)),
       ),
       body: Stack(
         children: [
@@ -155,11 +142,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark),
                       child: Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(24.0),
-                          border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0),
-                        ),
+                        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(24.0), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0)),
                         child: Column(
                           children: [
                             _buildPremiumInput(isDark: isDark, label: "Full Name", controller: _nameController, icon: HugeIcons.strokeRoundedUser),
@@ -180,14 +163,9 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark),
                       child: Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(24.0),
-                          border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0),
-                        ),
+                        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(24.0), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0)),
                         child: Column(
                           children: [
-                            // 🟢 RESTORED CURRENT PASSWORD
                             _buildPremiumInput(
                               isDark: isDark, label: "Current Password", controller: _currentPasswordController, icon: HugeIcons.strokeRoundedLockPassword,
                               isPassword: true, obscureText: _obscureCurrentPass, onToggleObscure: () => setState(() => _obscureCurrentPass = !_obscureCurrentPass),
@@ -196,7 +174,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             _buildPremiumInput(
                               isDark: isDark, label: "New Password", controller: _newPasswordController, icon: HugeIcons.strokeRoundedLockKey,
                               isPassword: true, obscureText: _obscureNewPass, onToggleObscure: () => setState(() => _obscureNewPass = !_obscureNewPass),
-                              validator: _validateNewPassword, // 🟢 APPLIES REGEX
+                              validator: _validateNewPassword,
                             ),
                           ],
                         ),
@@ -208,13 +186,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                     GestureDetector(
                       onTap: _isLoading ? null : _saveChanges,
                       child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)]),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
-                        ),
+                        width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)]), borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]),
                         child: Center(
                           child: _isLoading
                               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
