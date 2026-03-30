@@ -771,8 +771,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                           ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
                           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
 
-                      // 🟢 ADD THIS LINE TO FIX THE WARNING
-                      retinaMode: const RetinaMode.isHighDensity(context),
+                      // 🟢 PERFECT FIX: Has (context), but NO 'const' keyword!
+                      retinaMode: RetinaMode.isHighDensity(context),
 
                       backgroundColor: isDark
                           ? const Color(0xFF0E141B)
