@@ -136,7 +136,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       if (confirmed == true) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', true);
         // 🟢 FIXED: Swapped to the new global glass helper
-        if (mounted) showGlassToast(context, "Two-Factor Authentication is now ON");
+        if (mounted) showGlassToast(context, "Two-Factor Authentication Enabled");
       }
     } else {
       // 🟢 Security: Require Biometrics to turn OFF 2FA
