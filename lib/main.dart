@@ -11,6 +11,8 @@ import 'main_screen.dart';
 import '../screens/app_lock_screen.dart';
 import '../services/notification_service.dart';
 import '../data/notification_data.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // 🟢 GLOBAL VARIABLES FOR CLEAN ROUTING
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -20,9 +22,17 @@ Widget? pendingNotificationRoute;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🟢 PASTE YOUR SUPABASE KEYS HERE
+  await Supabase.initialize(
+    url: 'https://xcakmlfdwxdtfdvvvgso.supabase.co', // <-- Paste Project URL here
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w', // <-- Paste anon public key here
+  );
+
   await UserData.loadSavedData();
   await NotificationData.loadNotifications();
   await LocalNotificationService.initialize();
+
   runApp(const RezrvApp(startLocked: false));
 }
 
