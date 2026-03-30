@@ -9,6 +9,8 @@ import '../data/user_data.dart';
 import 'state.dart';
 import 'main_screen.dart';
 import '../screens/app_lock_screen.dart';
+import '../services/notification_service.dart';
+import '../data/notification_data.dart';
 
 // 🟢 1. Create a Global Key to control navigation from anywhere
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -16,10 +18,10 @@ bool isBypassingLock = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // 🟢 Add this line to load your saved profile data
   await UserData.loadSavedData();
-
+  await NotificationData.loadNotifications();
+  await LocalNotificationService.initialize();
   runApp(const RezrvApp(startLocked: false)); // or your app entry
 }
 
@@ -36,7 +38,6 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-
   late bool _isLocked; // 🟢 Changed to 'late'
 
   @override
@@ -116,6 +117,11 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
               locale: currentLocale,
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
+
+              // 🟢 ADD THIS: Maps the string to the actual screen!
+              routes: {
+                '/bookings': (context) => const MainScreen(), // Or BookingsView() if you prefer it to open standalone
+              },
 
               // 🟢 INSTANT ROUTING: No loading screens
               // 🟢 This checks the initial state from main()

@@ -8,6 +8,8 @@ import 'booking_ticket_screen.dart';
 import '../data/user_data.dart';
 import 'package:rezrv/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/user_data.dart';
+import '../services/notification_service.dart'; // 🟢 ADD THIS LINE
 
 class BookingsView extends StatefulWidget {
   final String shopName;
@@ -557,6 +559,9 @@ class _BookingsViewState extends State<BookingsView> {
                       totalPrice: "RM$_totalPrice",
                       bookingId: bId,
                     );
+
+                    // 🟢 ADD THIS LINE: Fires the OS Notification and saves it to the Glass UI!
+                    LocalNotificationService.showBookingConfirmed(widget.shopName);
 
                     setState(() {
                       _generatedBookingId = bId;

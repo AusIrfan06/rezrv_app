@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../screens/shop_detail_screen.dart';
 import '../data/user_data.dart';
+import '../screens/notifications_screen.dart';
 
 
 class HomeView extends StatefulWidget {
@@ -256,7 +257,13 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                     Stack(
                                       children: [
-                                        _buildGlassIconButton(Icons.notifications_none, isDark, textColor),
+                                        _buildGlassIconButton(
+                                            Icons.notifications_none,
+                                            isDark,
+                                            textColor,
+                                            // 🟢 Route to the new screen
+                                                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))
+                                        ),
                                         Positioned(
                                           top: 10, right: 12,
                                           child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
@@ -441,7 +448,8 @@ class _HomeViewState extends State<HomeView> {
 
   // --- WIDGET HELPERS ---
 
-  Widget _buildGlassIconButton(IconData icon, bool isDark, Color iconColor) {
+  // 🟢 FIXED: Added 'VoidCallback onTap'
+  Widget _buildGlassIconButton(IconData icon, bool isDark, Color iconColor, VoidCallback onTap) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
@@ -454,7 +462,7 @@ class _HomeViewState extends State<HomeView> {
           ),
           child: IconButton(
             icon: Icon(icon, color: iconColor, size: 22),
-            onPressed: () {},
+            onPressed: onTap, // 🟢 Trigger the passed function
           ),
         ),
       ),
