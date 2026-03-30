@@ -49,38 +49,29 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     super.dispose();
   }
 
-  void _saveChanges() {
-    // Drop the keyboard
+  void _saveChanges() async { // 🟢 Added async
     FocusScope.of(context).unfocus();
 
-    UserData.userName.value = _nameController.text;
-    UserData.userEmail.value = _emailController.text;
-    UserData.userPhone.value = _phoneController.text;
-    UserData.userDob.value = _dobController.text;
+    // 🟢 FIXED: Now it saves to the phone's memory permanently
+    await UserData.updateProfile(
+      name: _nameController.text,
+      email: _emailController.text,
+      phone: _phoneController.text,
+      dob: _dobController.text,
+    );
 
-    // Premium Floating SnackBar
+    // E-commerce Style Toast
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-              child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-            ),
-            const SizedBox(width: 12),
-            const Text("Profile updated successfully!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          ],
-        ),
-        backgroundColor: Colors.green.shade600,
+        content: const Text("Profile Saved Successfully", textAlign: TextAlign.center),
+        backgroundColor: Colors.black87,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.all(24),
-        elevation: 10,
+        margin: const EdgeInsets.only(bottom: 20, left: 50, right: 50),
+        duration: const Duration(seconds: 2),
       ),
     );
 
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   // 🟢 Helper for standard Glass Settings

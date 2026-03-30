@@ -127,20 +127,51 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   Future<void> _handle2FAToggle(bool enable) async {
     if (enable) {
-      // 1. Show a glass dialog to "Verify Phone/Email"
-      // 2. If verified, save state
-      await UserData.toggleSecuritySetting('twoFactorEnabled', true);
-      _showSuccessToast("2FA Activated");
-    } else {
-      // 🟢 Security: Ask for Biometrics before disabling 2FA!
-      bool authenticated = await _localAuth.authenticate(
-        localizedReason: 'Confirm identity to disable 2FA',
+      // 🟢 Logic: Show a Glassmorphic Setup Dialog
+      bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => _build2FASetupDialog(context),
       );
+
+      if (confirmed == true) {
+        await UserData.toggleSecuritySetting('twoFactorEnabled', true);
+        _showSuccessToast("Two-Factor Authentication is now ON");
+      }
+    } else {
+      // 🟢 Security: Require Biometrics to turn OFF 2FA
+      isBypassingLock = true;
+      bool authenticated = await _localAuth.authenticate(
+        localizedReason: 'Please verify to disable 2FA security',
+      );
+      isBypassingLock = false;
+
       if (authenticated) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', false);
-        _showSuccessToast("2FA Disabled");
+        _showSuccessToast("2FA Security Disabled");
       }
     }
+  }
+
+  // Helper for 2FA UI
+  Widget _build2FASetupDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: AlertDialog(
+        backgroundColor: isDark ? Colors.black87 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Enable 2FA?", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text("We will use your registered number (${UserData.userPhone.value}) to send verification codes."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Enable"),
+          ),
+        ],
+      ),
+    );
   }
 
   // 🟢 LOGIC: Opens native phone settings
