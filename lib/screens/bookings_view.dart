@@ -561,7 +561,17 @@ class _BookingsViewState extends State<BookingsView> {
                     );
 
                     // 🟢 ADD THIS LINE: Fires the OS Notification and saves it to the Glass UI!
-                    LocalNotificationService.showBookingConfirmed(widget.shopName);
+                    // 🟢 UPDATED: Send ALL the ticket data to the Notification Service!
+                    LocalNotificationService.showBookingConfirmed(
+                      shopName: widget.shopName,
+                      category: widget.category,
+                      shopImage: widget.shopImage,
+                      providerName: doctor["name"]!,
+                      date: dateStr,
+                      time: timeStr,
+                      totalPrice: "RM$_totalPrice",
+                      bookingId: bId,
+                    );
 
                     setState(() {
                       _generatedBookingId = bId;
