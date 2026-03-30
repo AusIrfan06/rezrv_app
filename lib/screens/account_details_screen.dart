@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../data/user_data.dart';
+import '../services/supabase_service.dart';
+import '../utils/glass_toast.dart'; // 🟢 INCLUDES YOUR NEW TOASTS
 
 class AccountDetailsScreen extends StatefulWidget {
   const AccountDetailsScreen({super.key});
@@ -48,32 +50,51 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate network request
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Save to global user data
+      // 1. Save general profile data (Name, Phone)
+      // Note: We don't usually let users change email without an email verification flow,
+      // but we update the local state here anyway!
       await UserData.updateProfile(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
       );
 
-      // If they changed the password, you would handle that auth logic here.
+      // 2. 🟢 PASSWORD UPDATE LOGIC
+      final newPass = _newPasswordController.text.trim();
+
+      // Only try to update the password if they actually typed something new
+      if (newPass.isNotEmpty) {
+        final passError = await SupabaseService.updatePassword(newPass);
+
+        if (passError != null) {
+          setState(() => _isLoading = false);
+          if (mounted) showGlassToast(context, passError, isError: true);
+          return; // Stop here if password fails
+        }
+      }
 
       setState(() => _isLoading = false);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Account updated successfully!"),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        showGlassToast(context, "Account updated successfully!"); // 🟢 GLASSS TOAST
         Navigator.pop(context);
       }
     }
+  }
+
+  // 🟢 PASSWORD VALIDATOR (Regex Rules)
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // It's okay to leave blank if they don't want to change it
+    }
+
+    // Rule: Min 8 chars, 1 Upper, 1 Lower, 1 Number/Symbol
+    final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*?[0-9!@#\$&*~]).{8,}$');
+
+    if (!regex.hasMatch(value)) {
+      return "Must be 8+ chars, include upper, lower & number/symbol";
+    }
+    return null;
   }
 
   LiquidGlassSettings _getGlassSettings(bool isDark) {
@@ -140,7 +161,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                           children: [
                             _buildPremiumInput(isDark: isDark, label: "Full Name", controller: _nameController, icon: HugeIcons.strokeRoundedUser),
                             const SizedBox(height: 16),
-                            _buildPremiumInput(isDark: isDark, label: "Email Address", controller: _emailController, icon: HugeIcons.strokeRoundedMail01, keyboardType: TextInputType.emailAddress),
+                            // Email is usually locked after sign up to prevent DB conflicts, so we make it read-only
+                            _buildPremiumInput(isDark: isDark, label: "Email Address (Read Only)", controller: _emailController, icon: HugeIcons.strokeRoundedMail01, keyboardType: TextInputType.emailAddress, readOnly: true),
                             const SizedBox(height: 16),
                             _buildPremiumInput(isDark: isDark, label: "Phone Number", controller: _phoneController, icon: HugeIcons.strokeRoundedCall02, keyboardType: TextInputType.phone),
                           ],
@@ -164,13 +186,9 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                         child: Column(
                           children: [
                             _buildPremiumInput(
-                              isDark: isDark, label: "Current Password", controller: _currentPasswordController, icon: HugeIcons.strokeRoundedLockPassword,
-                              isPassword: true, obscureText: _obscureCurrentPass, onToggleObscure: () => setState(() => _obscureCurrentPass = !_obscureCurrentPass),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildPremiumInput(
                               isDark: isDark, label: "New Password", controller: _newPasswordController, icon: HugeIcons.strokeRoundedLockKey,
                               isPassword: true, obscureText: _obscureNewPass, onToggleObscure: () => setState(() => _obscureNewPass = !_obscureNewPass),
+                              validator: _validatePassword, // 🟢 APPLIES THE REGEX RULES
                             ),
                           ],
                         ),
@@ -207,7 +225,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     );
   }
 
-  Widget _buildPremiumInput({required bool isDark, required String label, required TextEditingController controller, required dynamic icon, TextInputType keyboardType = TextInputType.text, bool isPassword = false, bool obscureText = false, VoidCallback? onToggleObscure}) {
+  // 🟢 UPGRADED: Added 'validator' and 'readOnly' properties
+  Widget _buildPremiumInput({required bool isDark, required String label, required TextEditingController controller, required dynamic icon, TextInputType keyboardType = TextInputType.text, bool isPassword = false, bool obscureText = false, VoidCallback? onToggleObscure, String? Function(String?)? validator, bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,11 +239,14 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
             controller: controller,
             keyboardType: keyboardType,
             obscureText: obscureText,
-            style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontSize: 14),
+            readOnly: readOnly,
+            style: TextStyle(color: isDark ? (readOnly ? Colors.white54 : Colors.white) : (readOnly ? Colors.black54 : Colors.black87), fontWeight: FontWeight.w600, fontSize: 14),
+            validator: validator ?? (value) => value == null || value.isEmpty && !readOnly ? "Required" : null,
             decoration: InputDecoration(
               prefixIcon: Padding(padding: const EdgeInsets.only(right: 14.0), child: HugeIcon(icon: icon, color: Colors.grey, size: 20)),
               prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               border: InputBorder.none,
+              errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11), // Formats regex errors beautifully
               suffixIcon: isPassword ? IconButton(
                 icon: HugeIcon(icon: obscureText ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView, color: Colors.grey, size: 20),
                 onPressed: onToggleObscure,

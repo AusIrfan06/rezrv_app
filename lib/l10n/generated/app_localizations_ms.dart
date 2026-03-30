@@ -163,8 +163,8 @@ class AppLocalizationsMs extends AppLocalizations {
   String get locationUnavailable => 'Lokasi tidak tersedia';
 
   @override
-  String helloUser(String firstName) {
-    return 'Helo, $firstName';
+  String hiUser(String firstName) {
+    return 'Hi, $firstName';
   }
 
   @override

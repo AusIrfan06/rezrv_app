@@ -395,8 +395,8 @@ abstract class AppLocalizations {
   /// Greeting on the home screen
   ///
   /// In en, this message translates to:
-  /// **'Hello, {firstName}'**
-  String helloUser(String firstName);
+  /// **'Hi, {firstName}'**
+  String hiUser(String firstName);
 
   /// No description provided for @promotions.
   ///

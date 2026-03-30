@@ -88,8 +88,8 @@
   "unknownState": "Negeri Tidak Diketahui",
   "locationUnavailable": "Lokasi tidak tersedia",
 
-  "helloUser": "Helo, {firstName}",
-  "@helloUser": {
+  "hiUser": "Hi, {firstName}",
+  "@hiUser": {
     "description": "Greeting on the home screen",
     "placeholders": {
       "firstName": {

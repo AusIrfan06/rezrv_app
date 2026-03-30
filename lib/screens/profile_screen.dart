@@ -21,6 +21,7 @@ import 'about_screens.dart';   // 🟢 ADD THIS
 import 'account_details_screen.dart'; // 🟢 ADD THIS
 import '../services/supabase_service.dart'; // 🟢 ADD THIS
 import 'auth_screen.dart'; // 🟢 ADD THIS
+import '../utils/glass_toast.dart'; // 🟢 ADD THIS
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -151,15 +152,26 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
         if (byteData != null) {
           final uint8List = byteData.buffer.asUint8List();
-
           final tempDir = await getTemporaryDirectory();
           final file = await File('${tempDir.path}/profile_crop_${DateTime.now().millisecondsSinceEpoch}.png').create();
           await file.writeAsBytes(uint8List);
 
-          // 🟢 Now this 'await' works because updateProfile is a Future!
-          await UserData.updateProfile(profilePic: file.path);
+          // 🟢 THE NEW CLOUD LOGIC
+          if (SupabaseService.isUserLoggedIn()) {
+            // Send it to the cloud!
+            final error = await SupabaseService.uploadProfileImage(file);
+            if (error != null) {
+              debugPrint("Upload failed: $error");
+              if (mounted) {
+                showGlassToast(context, error, isError: true); // 🟢 UPGRADED
+              }
+            }
+          } else {
+            // Guest mode: just save it locally on the phone
+            await UserData.updateProfile(profilePic: file.path);
+          }
 
-          debugPrint("Profile image PERMANENTLY saved: ${file.path}");
+          debugPrint("Profile image processed: ${file.path}");
         }
       }
     } catch (e) {
@@ -172,10 +184,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   void _showImageSourceSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // 🟢 CHECK: Does the user currently have a picture?
+    final bool hasExistingPic = UserData.userProfilePic.value.isNotEmpty;
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
-      // 🟢 1. Rename to 'dialogContext' to avoid confusing Flutter
       builder: (dialogContext) => BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -205,17 +219,37 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align tops if labels wrap
                   children: [
                     _buildOption(dialogContext, HugeIcons.strokeRoundedCamera01, "Camera", Colors.blueAccent, () {
-                      // 🟢 2. Pop using the dialog's context
                       Navigator.pop(dialogContext);
-                      // 🟢 3. Call without passing the dead context
                       _pickAndCropModern(ImageSource.camera);
                     }, isDark),
+
                     _buildOption(dialogContext, HugeIcons.strokeRoundedImage01, "Gallery", Colors.purpleAccent, () {
                       Navigator.pop(dialogContext);
                       _pickAndCropModern(ImageSource.gallery);
                     }, isDark),
+
+                    // 🟢 CONDITIONAL DELETE BUTTON
+                    if (hasExistingPic)
+                      _buildOption(dialogContext, HugeIcons.strokeRoundedDelete02, "Remove", Colors.redAccent, () async {
+                        Navigator.pop(dialogContext); // Close the popup instantly
+
+                        // 🟢 UPGRADED LOADING TOAST
+                        showGlassToast(context, "Removing picture...");
+
+                        // 🟢 CALL THE NEW DELETE FUNCTION
+                        final error = await SupabaseService.deleteProfileImage();
+
+                        if (context.mounted) {
+                          if (error != null) {
+                            showGlassToast(context, error, isError: true); // 🔴 UPGRADED ERROR
+                          } else {
+                            showGlassToast(context, "Profile picture removed!"); // 🟢 UPGRADED SUCCESS
+                          }
+                        }
+                      }, isDark),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -306,297 +340,350 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         ),
       ),
 
-      // 🟢 2. Your actual scrolling content
+          // 🟢 2. Your actual scrolling content
           // 🟢 2. Your actual scrolling content
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(children: [
-              const SizedBox(height: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
 
-              // --- 🟢 RESTORED PROFILE HEADER ---
-              AnimatedBuilder(
-                  animation: Listenable.merge([UserData.userName, UserData.userEmail, UserData.userProfilePic, UserData.userLocation]),
-                  builder: (context, _) {
-                    final hasPic = UserData.userProfilePic.value.isNotEmpty;
-                    final name = UserData.userName.value.isNotEmpty ? UserData.userName.value : "Guest User";
-                    final email = UserData.userEmail.value.isNotEmpty ? UserData.userEmail.value : "Set up your profile";
-                    final locationStr = UserData.userLocation.value.isEmpty ? "Locating..." : UserData.userLocation.value;
+                // --- 🟢 RESTORED PROFILE HEADER ---
+                AnimatedBuilder(
+                    animation: Listenable.merge([UserData.userName, UserData.userEmail, UserData.userProfilePic, UserData.userLocation]),
+                    builder: (context, _) {
+                      // 🟢 CHECK LOGIN STATUS FIRST
+                      final isLoggedIn = SupabaseService.isUserLoggedIn();
 
-                    return Center(
-                        child: Column(
-                            children: [
-                              GestureDetector(
-                                onTap: () => _showImageSourceSelector(context),
-                                child: Stack(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
+                      final hasPic = UserData.userProfilePic.value.isNotEmpty;
+
+                      // 🟢 LOGIC: Only show real data if logged in. Otherwise, show guest text!
+                      final name = isLoggedIn && UserData.userName.value.isNotEmpty
+                          ? UserData.userName.value
+                          : "Guest Visitor";
+
+                      final email = isLoggedIn && UserData.userEmail.value.isNotEmpty
+                          ? UserData.userEmail.value
+                          : "Tap below to log in and sync data";
+
+                      final locationStr = UserData.userLocation.value.isEmpty ? "Locating..." : UserData.userLocation.value;
+
+                      return Center(
+                          child: Column(
+                              children: [
+                                // --- 🟢 TAPPABLE PROFILE AVATAR (PROHIBITED FOR GUESTS) ---
+                                GestureDetector(
+                                  // 🟢 ONLY allow tapping if the user is logged in
+                                  onTap: isLoggedIn
+                                      ? () => _showImageSourceSelector(context)
+                                      : () {
+                                  },
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              // 🟢 Visual hint: Blue border only for logged in users
+                                                color: isLoggedIn ? Colors.blue.withOpacity(0.5) : Colors.grey.withOpacity(0.3),
+                                                width: 2
+                                            )
+                                        ),
+                                        child: CircleAvatar(
+                                          radius: 50,
+                                          backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                                          backgroundImage: hasPic
+                                              ? (UserData.userProfilePic.value.startsWith('http')
+                                              ? NetworkImage(UserData.userProfilePic.value) as ImageProvider
+                                              : FileImage(File(UserData.userProfilePic.value)) as ImageProvider)
+                                              : null,
+                                          child: !hasPic ? const HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.grey, size: 40) : null,
+                                        ),
+                                      ),
+
+                                      // 🟢 ONLY show the Edit Icon if the user is logged in
+                                      if (isLoggedIn)
+                                        Positioned(
+                                          bottom: 4, right: 4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                                            child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                                const SizedBox(height: 4),
+                                Text(email, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                const SizedBox(height: 8),
+
+                                GestureDetector(
+                                  onTap: _forceRefreshLocation,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2)
+                                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(20)
                                       ),
-                                      child: CircleAvatar(
-                                        radius: 50,
-                                        backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                        backgroundImage: hasPic
-                                            ? (UserData.userProfilePic.value.startsWith('http')
-                                            ? NetworkImage(UserData.userProfilePic.value) as ImageProvider
-                                            : FileImage(File(UserData.userProfilePic.value)) as ImageProvider)
-                                            : null,
-                                        child: !hasPic ? const HugeIcon(icon: HugeIcons.strokeRoundedUser, color: Colors.grey, size: 40) : null,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 4, right: 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                                        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 4),
-                              Text(email, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                              const SizedBox(height: 8),
-
-                              GestureDetector(
-                                onTap: _forceRefreshLocation,
-                                behavior: HitTestBehavior.opaque,
-                                child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-                                        borderRadius: BorderRadius.circular(20)
-                                    ),
-                                    child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, color: Colors.blue, size: 14),
-                                          const SizedBox(width: 4),
-                                          Text(locationStr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                          const SizedBox(width: 6),
-                                          Icon(Icons.refresh_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 12),
-                                        ]
-                                    )
-                                ),
-                              )
-                            ]
-                        )
-                    );
-                  }
-              ),
-              const SizedBox(height: 40),
-
-              // --- ACCOUNT SECTION (🟢 MOVED TO TOP & ADDED NEW SCREEN) ---
-              _buildSectionHeader(l10n.account),
-              _buildGlassSection(isDark, Column(children: [
-                // 🟢 NEW: Account Details Link
-                _buildSettingsTile(isDark, HugeIcons.strokeRoundedUserEdit01, "Account Details", trailing: _buildArrow(), onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsScreen()));
-                }),
-                _buildDivider(isDark),
-                _buildSettingsTile(isDark, HugeIcons.strokeRoundedUser, l10n.personalInformation, trailing: _buildArrow(), onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalInfoScreen()));
-                }),
-                _buildDivider(isDark),
-                _buildSettingsTile(isDark, HugeIcons.strokeRoundedCreditCard, l10n.paymentMethods, trailing: _buildArrow(), onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
-                }),
-                _buildDivider(isDark),
-                _buildSettingsTile(isDark, HugeIcons.strokeRoundedLock, l10n.privacySecurity, trailing: _buildArrow(), onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
-                })
-              ])),
-              const SizedBox(height: 24),
-
-              // --- PREFERENCES SECTION (🟢 MOVED DOWN) ---
-              _buildSectionHeader(l10n.preferences),
-              _buildGlassSection(isDark, Column(children: [
-                _buildThemeToggleTile(context, isDark, l10n.darkMode),
-                _buildDivider(isDark),
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedGlobe02,
-                  l10n.language,
-                  trailing: ValueListenableBuilder<Locale>(
-                      valueListenable: appLocaleNotifier,
-                      builder: (context, locale, _) {
-                        String displayLanguage = locale.languageCode == 'ms' ? l10n.malay : l10n.english;
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(displayLanguage, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                            const SizedBox(width: 8),
-                            _buildArrow(),
-                          ],
-                        );
-                      }
-                  ),
-                  onTap: () => _showLanguageSelector(context),
-                ),
-              ])),
-              const SizedBox(height: 24),
-
-              // --- INVITE BANNER ---
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
-                ),
-                child: Row(
-                  children: [
-                    const HugeIcon(icon: HugeIcons.strokeRoundedGift, color: Colors.white, size: 40),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                          Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // --- SUPPORT SECTION ---
-              _buildSectionHeader(l10n.support ?? "SUPPORT"),
-              _buildGlassSection(isDark, Column(children: [
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedCustomerService,
-                  l10n.helpCenter ?? "Help Center",
-                  trailing: _buildArrow(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
-                ),
-                _buildDivider(isDark),
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedMessageQuestion,
-                  l10n.contactUs ?? "Contact Us",
-                  trailing: _buildArrow(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen())),
-                ),
-              ])),
-              const SizedBox(height: 24),
-
-              // --- ABOUT SECTION ---
-              _buildSectionHeader(l10n.about ?? "ABOUT"),
-              _buildGlassSection(isDark, Column(children: [
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedInformationCircle,
-                  l10n.termsOfService ?? "Terms of Service",
-                  trailing: _buildArrow(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
-                    title: "Terms of Service",
-                    content: rezrvTermsText,
-                  ))),
-                ),
-                _buildDivider(isDark),
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedShield01,
-                  l10n.privacyPolicy ?? "Privacy Policy",
-                  trailing: _buildArrow(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
-                    title: "Privacy Policy",
-                    content: rezrvPrivacyText,
-                  ))),
-                ),
-                _buildDivider(isDark),
-                _buildSettingsTile(
-                  isDark,
-                  HugeIcons.strokeRoundedStar,
-                  l10n.rateUs ?? "Rate the App",
-                  trailing: _buildArrow(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RateAppScreen(), fullscreenDialog: true)),
-                ),
-              ])),
-
-              // --- VERSION FOOTER ---
-              const SizedBox(height: 12),
-              Center(
-                child: Column(
-                  children: [
-                    Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withOpacity(0.3), fontSize: 10)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // --- 🟢 UPGRADED LOGOUT BUTTON ---
-              // --- 🟢 UPGRADED SMART LOGIN/LOGOUT BUTTON ---
-              GestureDetector(
-                onTap: () async {
-                  if (SupabaseService.isUserLoggedIn()) {
-                    // User is logged in -> Log them out
-                    await SupabaseService.signOut();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Logged out successfully")),
+                                      child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, color: Colors.blue, size: 14),
+                                            const SizedBox(width: 4),
+                                            Text(locationStr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            const SizedBox(width: 6),
+                                            Icon(Icons.refresh_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 12),
+                                          ]
+                                      )
+                                  ),
+                                )
+                              ]
+                          )
                       );
-                      setState(() {}); // Refresh screen to show guest state
                     }
-                  } else {
-                    // User is a guest -> Route to the new Auth Screen
-                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
-                    setState(() {}); // Refresh screen to show logged-in state when they come back!
-                  }
-                },
-                child: GlassContainer(
-                  useOwnLayer: true,
-                  quality: GlassQuality.standard,
-                  shape: LiquidRoundedSuperellipse(borderRadius: 24.0),
-                  settings: _getGlassSettings(isDark, blur: 10),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    decoration: BoxDecoration(
-                      // 🟢 Color logic: Blue for Guest Login, Red for Log Out
-                      color: SupabaseService.isUserLoggedIn()
-                          ? Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15)
-                          : Colors.blueAccent.withOpacity(isDark ? 0.1 : 0.15),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: SupabaseService.isUserLoggedIn()
-                            ? Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5)
-                            : Colors.blueAccent.withOpacity(isDark ? 0.3 : 0.5),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        SupabaseService.isUserLoggedIn() ? l10n.logOut : "Log In / Register",
-                        style: TextStyle(
-                          color: SupabaseService.isUserLoggedIn() ? Colors.redAccent : Colors.blueAccent,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 32),
+
+                // --- 🟢 CONDITIONAL LOGIN BUTTON (SHOWS ONLY FOR GUESTS) ---
+                if (!SupabaseService.isUserLoggedIn()) ...[
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
+                      setState(() {}); // Refresh screen to show logged-in state when they come back!
+                    },
+                    child: GlassContainer(
+                      useOwnLayer: true,
+                      quality: GlassQuality.standard,
+                      shape: LiquidRoundedSuperellipse(borderRadius: 24.0),
+                      settings: _getGlassSettings(isDark, blur: 10),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withOpacity(isDark ? 0.1 : 0.15),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.blueAccent.withOpacity(isDark ? 0.3 : 0.5),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Log In / Register",
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 32),
+                ],
+
+                // --- 🟢 RESTRICTED: ACCOUNT SECTION (SHOWS ONLY WHEN LOGGED IN) ---
+                if (SupabaseService.isUserLoggedIn()) ...[
+                  _buildSectionHeader(l10n.account),
+                  _buildGlassSection(isDark, Column(children: [
+                    _buildSettingsTile(isDark, HugeIcons.strokeRoundedUserEdit01, "Account Details", trailing: _buildArrow(), onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountDetailsScreen()));
+                    }),
+                    _buildDivider(isDark),
+                    _buildSettingsTile(isDark, HugeIcons.strokeRoundedUser, l10n.personalInformation, trailing: _buildArrow(), onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalInfoScreen()));
+                    }),
+                    _buildDivider(isDark),
+                    _buildSettingsTile(isDark, HugeIcons.strokeRoundedCreditCard, l10n.paymentMethods, trailing: _buildArrow(), onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
+                    }),
+                    _buildDivider(isDark),
+                    _buildSettingsTile(isDark, HugeIcons.strokeRoundedLock, l10n.privacySecurity, trailing: _buildArrow(), onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
+                    })
+                  ])),
+                  const SizedBox(height: 24),
+                ],
+
+                // --- PUBLIC: PREFERENCES SECTION ---
+                _buildSectionHeader(l10n.preferences),
+                _buildGlassSection(isDark, Column(children: [
+                  _buildThemeToggleTile(context, isDark, l10n.darkMode),
+                  _buildDivider(isDark),
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedGlobe02,
+                    l10n.language,
+                    trailing: ValueListenableBuilder<Locale>(
+                        valueListenable: appLocaleNotifier,
+                        builder: (context, locale, _) {
+                          String displayLanguage = locale.languageCode == 'ms' ? l10n.malay : l10n.english;
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(displayLanguage, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                              const SizedBox(width: 8),
+                              _buildArrow(),
+                            ],
+                          );
+                        }
+                    ),
+                    onTap: () => _showLanguageSelector(context),
+                  ),
+                ])),
+                const SizedBox(height: 24),
+
+                // --- 🟢 RESTRICTED: INVITE BANNER (SHOWS ONLY WHEN LOGGED IN) ---
+                if (SupabaseService.isUserLoggedIn()) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                    ),
+                    child: Row(
+                      children: [
+                        const HugeIcon(icon: HugeIcons.strokeRoundedGift, color: Colors.white, size: 40),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
+                // --- PUBLIC: SUPPORT SECTION ---
+                _buildSectionHeader(l10n.support ?? "SUPPORT"),
+                _buildGlassSection(isDark, Column(children: [
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedCustomerService,
+                    l10n.helpCenter ?? "Help Center",
+                    trailing: _buildArrow(),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
+                  ),
+                  _buildDivider(isDark),
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedMessageQuestion,
+                    l10n.contactUs ?? "Contact Us",
+                    trailing: _buildArrow(),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen())),
+                  ),
+                ])),
+                const SizedBox(height: 24),
+
+                // --- PUBLIC: ABOUT SECTION ---
+                _buildSectionHeader(l10n.about ?? "ABOUT"),
+                _buildGlassSection(isDark, Column(children: [
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedInformationCircle,
+                    l10n.termsOfService ?? "Terms of Service",
+                    trailing: _buildArrow(),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                      title: "Terms of Service",
+                      content: rezrvTermsText,
+                    ))),
+                  ),
+                  _buildDivider(isDark),
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedShield01,
+                    l10n.privacyPolicy ?? "Privacy Policy",
+                    trailing: _buildArrow(),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalTextScreen(
+                      title: "Privacy Policy",
+                      content: rezrvPrivacyText,
+                    ))),
+                  ),
+                  _buildDivider(isDark),
+                  _buildSettingsTile(
+                    isDark,
+                    HugeIcons.strokeRoundedStar,
+                    l10n.rateUs ?? "Rate the App",
+                    trailing: _buildArrow(),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RateAppScreen(), fullscreenDialog: true)),
+                  ),
+                ])),
+
+                // --- VERSION FOOTER ---
+                const SizedBox(height: 12),
+                Center(
+                  child: Column(
+                    children: [
+                      Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withOpacity(0.3), fontSize: 10)),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 40),
+
+                // --- 🟢 CONDITIONAL LOGOUT BUTTON (SHOWS ONLY FOR LOGGED-IN USERS) ---
+                if (SupabaseService.isUserLoggedIn()) ...[
+                  GestureDetector(
+                    onTap: () async {
+                      await SupabaseService.signOut();
+                      if (context.mounted) {
+                        showGlassToast(context, "Logged out successfully"); // 🟢 UPGRADED
+                        setState(() {}); // Refresh screen to show guest state
+                      }
+                    },
+                    child: GlassContainer(
+                      useOwnLayer: true,
+                      quality: GlassQuality.standard,
+                      shape: LiquidRoundedSuperellipse(borderRadius: 24.0),
+                      settings: _getGlassSettings(isDark, blur: 10),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            l10n.logOut,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ],
             ),
           ),
         ],

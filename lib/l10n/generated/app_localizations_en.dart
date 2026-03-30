@@ -163,8 +163,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationUnavailable => 'Location unavailable';
 
   @override
-  String helloUser(String firstName) {
-    return 'Hello, $firstName';
+  String hiUser(String firstName) {
+    return 'Hi, $firstName';
   }
 
   @override

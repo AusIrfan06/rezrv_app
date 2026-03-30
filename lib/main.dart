@@ -11,8 +11,8 @@ import 'main_screen.dart';
 import '../screens/app_lock_screen.dart';
 import '../services/notification_service.dart';
 import '../data/notification_data.dart';
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_service.dart'; // 🟢 1. ADDED IMPORT FOR SUPABASE SERVICE
 
 // 🟢 GLOBAL VARIABLES FOR CLEAN ROUTING
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -25,8 +25,8 @@ void main() async {
 
   // 🟢 PASTE YOUR SUPABASE KEYS HERE
   await Supabase.initialize(
-    url: 'https://xcakmlfdwxdtfdvvvgso.supabase.co', // <-- Paste Project URL here
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w', // <-- Paste anon public key here
+    url: 'https://xcakmlfdwxdtfdvvvgso.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w',
   );
 
   try {
@@ -38,14 +38,14 @@ void main() async {
   }
   // 🟢 --------------------------------
 
-  await UserData.loadSavedData();
-  await NotificationData.loadNotifications();
-  await LocalNotificationService.initialize();
-  runApp(const RezrvApp(startLocked: false));
+  // 🟢 2. AUTO-SYNC THE USER DATA ON STARTUP
+  await SupabaseService.syncUserOnStartup();
+
   await UserData.loadSavedData();
   await NotificationData.loadNotifications();
   await LocalNotificationService.initialize();
 
+  // 🟢 3. CLEANED UP DUPLICATES: Only one runApp call here now!
   runApp(const RezrvApp(startLocked: false));
 }
 
@@ -96,7 +96,7 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
 
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => AppLockScreen(
-          onUnlocked: _handleUnlock, // 🟢 Route cleanly using the new function below
+          onUnlocked: _handleUnlock,
         )),
             (route) => false,
       );
@@ -155,7 +155,7 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
                 '/bookings': (context) => const MainScreen(),
               },
               home: widget.startLocked && _isLocked
-                  ? AppLockScreen(onUnlocked: _handleUnlock) // 🟢 Use the hub here too
+                  ? AppLockScreen(onUnlocked: _handleUnlock)
                   : const MainScreen(),
             );
           },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../services/supabase_service.dart';
+import '../utils/glass_toast.dart'; // 🟢 ADD THIS
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -58,24 +59,12 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!mounted) return;
 
     if (errorMsg == null) {
-      // 🟢 SUCCESS! Close the auth screen and go back to the app
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isLogin ? "Welcome back!" : "Account created successfully!"),
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      // 🟢 SUCCESS! Show green glass toast
+      showGlassToast(context, _isLogin ? "Welcome back!" : "Account created successfully!");
       Navigator.pop(context); // Takes them back to the Profile Screen!
     } else {
-      // 🔴 FAILED! Show the Supabase error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      // 🔴 FAILED! Show red glass toast
+      showGlassToast(context, errorMsg, isError: true);
     }
   }
 

@@ -88,8 +88,8 @@
     "unknownState": "Unknown State",
     "locationUnavailable": "Location unavailable",
 
-    "helloUser": "Hello, {firstName}",
-    "@helloUser": {
+    "hiUser": "Hi, {firstName}",
+    "@hiUser": {
         "description": "Greeting on the home screen",
         "placeholders": {
             "firstName": {

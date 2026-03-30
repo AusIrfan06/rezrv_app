@@ -10,6 +10,7 @@ import 'package:geocoding/geocoding.dart';
 import '../screens/shop_detail_screen.dart';
 import '../data/user_data.dart';
 import '../screens/notifications_screen.dart';
+import '../services/supabase_service.dart';
 
 
 class HomeView extends StatefulWidget {
@@ -193,13 +194,18 @@ class _HomeViewState extends State<HomeView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // --- HEADER AREA ---
-                    // --- HEADER AREA ---
                     AnimatedBuilder(
                         animation: Listenable.merge([UserData.userName, UserData.userProfilePic]),
                         builder: (context, _) {
-                          final hasPic = UserData.userProfilePic.value.isNotEmpty;
-                          // Grab just the first name for the greeting
-                          final firstName = UserData.userName.value.isNotEmpty ? UserData.userName.value.split(" ")[0] : l10n.user;
+                          // 🟢 1. Check if the user is actually logged in
+                          final bool isLoggedIn = SupabaseService.isUserLoggedIn();
+
+                          // 🟢 2. Determine the Greeting Text
+                          // We use a hardcoded "Guest" fallback to avoid the l10n error
+                          final String displayName = isLoggedIn && UserData.userName.value.isNotEmpty
+                              ? UserData.userName.value.split(" ")[0]
+                              : "Guest";
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -219,20 +225,21 @@ class _HomeViewState extends State<HomeView> {
                                           border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 2),
                                           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
                                         ),
-                                        // 🟢 LISTEN to the global userProfilePic for instant sync
                                         child: ValueListenableBuilder<String>(
                                           valueListenable: UserData.userProfilePic,
                                           builder: (context, picPath, _) {
-                                            final hasPic = picPath.isNotEmpty;
+                                            // 🟢 3. Only show the profile pic if logged in AND path exists
+                                            final bool showPic = isLoggedIn && picPath.isNotEmpty;
+
                                             return CircleAvatar(
                                               radius: 22,
                                               backgroundColor: Colors.transparent,
-                                              backgroundImage: hasPic
+                                              backgroundImage: showPic
                                                   ? (picPath.startsWith('http')
                                                   ? NetworkImage(picPath) as ImageProvider
                                                   : FileImage(File(picPath)) as ImageProvider)
                                                   : null,
-                                              child: !hasPic ? const Icon(Icons.person, color: Colors.grey, size: 20) : null,
+                                              child: !showPic ? const Icon(Icons.person, color: Colors.grey, size: 20) : null,
                                             );
                                           },
                                         ),
@@ -244,7 +251,6 @@ class _HomeViewState extends State<HomeView> {
                                             Icons.notifications_none,
                                             isDark,
                                             textColor,
-                                            // 🟢 Route to the new screen
                                                 () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))
                                         ),
                                         Positioned(
@@ -258,11 +264,11 @@ class _HomeViewState extends State<HomeView> {
                               ),
                               const SizedBox(height: 4),
 
-                              // --- 🟢 GREETING & LOCATION ---
+                              // --- 🟢 UPDATED GREETING ---
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                                 child: Text(
-                                  l10n.helloUser(firstName),
+                                  l10n.hiUser(displayName),
                                   style: TextStyle(color: textColor, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
                                 ),
                               ),
@@ -270,7 +276,6 @@ class _HomeViewState extends State<HomeView> {
                           );
                         }
                     ),
-                    // --- 🟢 GREETING & LOCATION ---
                     // --- 🟢 GREETING & LOCATION ---
                     const SizedBox(height: 4),
                     ValueListenableBuilder<String>(
