@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import '../utils/glass_toast.dart';
 
 // ==========================================
 // SHARED UI HELPERS (About)
@@ -142,13 +143,10 @@ class _RateAppScreenState extends State<RateAppScreen> {
 
   void _submitFeedback() {
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Thank you for your feedback!", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green.shade600, behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), margin: const EdgeInsets.all(24),
-      ),
-    );
+
+    // 🟢 Call the global helper instead of the ugly solid SnackBar
+    showGlassToast(context, "Thank you for your feedback!");
+
     Navigator.pop(context);
   }
 

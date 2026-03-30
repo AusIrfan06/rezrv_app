@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../data/user_data.dart';
 import 'package:rezrv/l10n/generated/app_localizations.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart'; // 🟢 Added for the premium glass
+import '../utils/glass_toast.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -49,10 +50,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     super.dispose();
   }
 
-  void _saveChanges() async { // 🟢 Added async
+  void _saveChanges() async {
     FocusScope.of(context).unfocus();
 
-    // 🟢 FIXED: Now it saves to the phone's memory permanently
     await UserData.updateProfile(
       name: _nameController.text,
       email: _emailController.text,
@@ -60,18 +60,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       dob: _dobController.text,
     );
 
-    // E-commerce Style Toast
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Profile Saved Successfully", textAlign: TextAlign.center),
-        backgroundColor: Colors.black87,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 20, left: 50, right: 50),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    if (mounted) Navigator.pop(context);
+    // 🟢 Simply call your new global helper!
+    if (mounted) {
+      showGlassToast(context, "Profile Saved Successfully");
+      Navigator.pop(context);
+    }
   }
 
   // 🟢 Helper for standard Glass Settings

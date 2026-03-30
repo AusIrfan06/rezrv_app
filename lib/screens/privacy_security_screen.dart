@@ -14,7 +14,7 @@ import 'dart:convert';
 import '../main.dart';
 import '../data/user_data.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // 🟢 ADD THIS
-import 'package:permission_handler/permission_handler.dart';
+import '../utils/glass_toast.dart';
 
 class PrivacySecurityScreen extends StatefulWidget {
   const PrivacySecurityScreen({super.key});
@@ -135,7 +135,8 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
       if (confirmed == true) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', true);
-        _showSuccessToast("Two-Factor Authentication is now ON");
+        // 🟢 FIXED: Swapped to the new global glass helper
+        if (mounted) showGlassToast(context, "Two-Factor Authentication is now ON");
       }
     } else {
       // 🟢 Security: Require Biometrics to turn OFF 2FA
@@ -147,7 +148,8 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
       if (authenticated) {
         await UserData.toggleSecuritySetting('twoFactorEnabled', false);
-        _showSuccessToast("2FA Security Disabled");
+        // 🟢 FIXED: Swapped to the new global glass helper
+        if (mounted) showGlassToast(context, "2FA Security Disabled");
       }
     }
   }
@@ -215,65 +217,11 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       HapticFeedback.mediumImpact();
 
       // 🟢 USE THE NEW PREMIUM TOAST
-      _showSuccessToast("Cache cleared successfully");
+      showGlassToast(context, "Cache cleared successfully");
 
     } catch (e) {
       debugPrint("Clear cache error: $e");
     }
-  }
-
-  void _showSuccessToast(String message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // First, clear any existing snackbars so they don't stack up
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent, // 🟢 Hides the "ugly" default box
-        duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 20), // 🟢 Floats it above the bottom
-        content: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // 🟢 Matching glass blur
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.green.withOpacity(0.15)
-                    : Colors.green.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.green.withOpacity(0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -880,8 +828,8 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
                           // Simulate Supabase/Auth logout here...
 
-                          // 🟢 SHOW THE GLASS TOAST
-                          _showSuccessToast("Other sessions secured successfully");
+                          // 🟢 FIXED: Swapped to the new global glass helper
+                          showGlassToast(context, "Other sessions secured successfully");
                         },
                         child: const Text("Log Out", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
                       ),

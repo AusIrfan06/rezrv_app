@@ -770,6 +770,10 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                       urlTemplate: isDark
                           ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
                           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+
+                      // 🟢 ADD THIS LINE TO FIX THE WARNING
+                      retinaMode: const RetinaMode.isHighDensity(context),
+
                       backgroundColor: isDark
                           ? const Color(0xFF0E141B)
                           : const Color(0xFFEBE7E3),
