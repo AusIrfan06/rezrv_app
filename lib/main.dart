@@ -29,6 +29,19 @@ void main() async {
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w', // <-- Paste anon public key here
   );
 
+  try {
+    // We try to grab just 1 row from the profiles table
+    final testData = await Supabase.instance.client.from('profiles').select().limit(1);
+    debugPrint("✅ SUPABASE CONNECTION SUCCESSFUL! Data: $testData");
+  } catch (e) {
+    debugPrint("❌ SUPABASE CONNECTION FAILED: $e");
+  }
+  // 🟢 --------------------------------
+
+  await UserData.loadSavedData();
+  await NotificationData.loadNotifications();
+  await LocalNotificationService.initialize();
+  runApp(const RezrvApp(startLocked: false));
   await UserData.loadSavedData();
   await NotificationData.loadNotifications();
   await LocalNotificationService.initialize();
