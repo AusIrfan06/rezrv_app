@@ -23,29 +23,31 @@ Widget? pendingNotificationRoute;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🟢 PASTE YOUR SUPABASE KEYS HERE
-  await Supabase.initialize(
-    url: 'https://xcakmlfdwxdtfdvvvgso.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w',
-  );
-
+  // 🟢 BULLETPROOF STARTUP: Wrap everything in a try-catch so the app NEVER freezes
   try {
-    // We try to grab just 1 row from the profiles table
+    // 1. Initialize Supabase
+    await Supabase.initialize(
+      url: 'https://xcakmlfdwxdtfdvvvgso.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYWttbGZkd3hkdGZkdnZ2Z3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTEyMjIsImV4cCI6MjA5MDQ2NzIyMn0.XXYmezxxuc7Y2uM75vPFQpj3bMeRDrNe1L9kXyNYq7w',
+    );
+
+    // 2. Test Connection
     final testData = await Supabase.instance.client.from('profiles').select().limit(1);
     debugPrint("✅ SUPABASE CONNECTION SUCCESSFUL! Data: $testData");
+
+    // 3. Auto-Sync and Load Local Data
+    await SupabaseService.syncUserOnStartup();
+    await UserData.loadSavedData();
+    await NotificationData.loadNotifications();
+    await LocalNotificationService.initialize();
+
   } catch (e) {
-    debugPrint("❌ SUPABASE CONNECTION FAILED: $e");
+    // If ANYTHING fails (no internet, secure storage error, etc.),
+    // it prints the error here instead of permanently freezing your app!
+    debugPrint("❌ CRITICAL STARTUP ERROR CAUGHT: $e");
   }
-  // 🟢 --------------------------------
 
-  // 🟢 2. AUTO-SYNC THE USER DATA ON STARTUP
-  await SupabaseService.syncUserOnStartup();
-
-  await UserData.loadSavedData();
-  await NotificationData.loadNotifications();
-  await LocalNotificationService.initialize();
-
-  // 🟢 3. CLEANED UP DUPLICATES: Only one runApp call here now!
+  // 🟢 4. runApp is safely OUTSIDE the try-catch. It will ALWAYS fire now!
   runApp(const RezrvApp(startLocked: false));
 }
 
