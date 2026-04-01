@@ -539,7 +539,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                             ),
                             child: HugeIcon(
                                 icon: HugeIcons.strokeRoundedLockKey,
-                                color: appLockEnabled ? Colors.blue : Colors.grey,
+                                color: appLockEnabled ? Colors.blue : Colors.white,
                                 size: 20
                             ),
                           ),
@@ -555,7 +555,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                                   style: TextStyle(
                                       color: appLockEnabled ? Colors.blue : Colors.grey,
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                       fontFamily: 'Inter'
                                   ),
                                 ),

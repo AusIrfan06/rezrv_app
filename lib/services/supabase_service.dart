@@ -42,7 +42,7 @@ class SupabaseService {
     }
   }
 
-  // 🟢 2. SIGN IN EXISTING USER
+  // 🟢 2. SIGN IN EXISTING USER (Pulls DOB, Address, and Payments)
   static Future<String?> signInUser({
     required String email,
     required String password,
@@ -66,6 +66,14 @@ class SupabaseService {
         UserData.userPhone.value = profileData['phone'] ?? '';
         UserData.userProfilePic.value = profileData['avatar_url'] ?? '';
 
+        // 🟢 PULL NEW E-COMMERCE DATA
+        UserData.userDob.value = profileData['dob'] ?? '';
+        UserData.userLocation.value = profileData['address'] ?? '';
+
+        if (profileData['payment_methods'] != null) {
+          UserData.savedPaymentMethods.value = List<Map<String, dynamic>>.from(profileData['payment_methods']);
+        }
+
         return null;
       }
       return "Login failed.";
@@ -80,10 +88,7 @@ class SupabaseService {
   // 🟢 3. LOG OUT
   static Future<void> signOut() async {
     await _supabase.auth.signOut();
-    UserData.userEmail.value = '';
-    UserData.userName.value = '';
-    UserData.userPhone.value = '';
-    UserData.userProfilePic.value = '';
+    await UserData.clearUserData();
   }
 
   // 🟢 4. CHECK IF USER IS ALREADY LOGGED IN
@@ -91,91 +96,47 @@ class SupabaseService {
     return _supabase.auth.currentUser != null;
   }
 
-  // 🟢 5. UPLOAD PROFILE PICTURE
-  static Future<String?> uploadProfileImage(File imageFile) async {
+  // 🟢 5. SAVE PROFILE DETAILS TO CLOUD (Name, Phone, DOB, Address)
+  static Future<String?> updateProfileDetails({
+    required String name,
+    required String phone,
+    required String dob,
+    required String address,
+  }) async {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return "User not logged in";
 
-      final fileExtension = imageFile.path.split('.').last;
-      final fileName = '${user.id}.$fileExtension';
+      await _supabase.from('profiles').update({
+        'full_name': name,
+        'phone': phone,
+        'dob': dob,
+        'address': address,
+      }).eq('id', user.id);
 
-      // 1. Upload the image to the 'avatars' bucket
-      await _supabase.storage.from('avatars').upload(
-        fileName,
-        imageFile,
-        fileOptions: const FileOptions(upsert: true),
-      );
-      // 2. Get the public URL of the freshly uploaded image
-      String publicUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
-      // --- 🟢 CACHE BUSTER: Add a timestamp to force Flutter to reload the new image! ---
-      publicUrl = '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
-      // 3. Save that new unique URL into the database table
-      await _supabase.from('profiles').update({'avatar_url': publicUrl}).eq('id', user.id);
-      // 4. Update the app's UI instantly
-      UserData.userProfilePic.value = publicUrl;
-      return null; // Success!
-    } 
-    catch (e) {
-      return "Failed to upload image: $e";
+      return null;
+    } catch (e) {
+      debugPrint("Profile Update Error: $e");
+      return "Failed to save profile details.";
     }
   }
 
-  // 🟢 6. DELETE PROFILE PICTURE
-  static Future<String?> deleteProfileImage() async {
+  // 🟢 6. SYNC PAYMENT METHODS TO CLOUD (Saves Cards/Banks as JSONB)
+  static Future<void> syncPaymentMethodsToCloud(List<Map<String, dynamic>> methods) async {
     try {
       final user = _supabase.auth.currentUser;
-      if (user == null) return "User not logged in";
+      if (user == null) return;
 
-      // 1. Get the current image URL from our local state
-      final currentUrl = UserData.userProfilePic.value;
-      if (currentUrl.isEmpty) return null; // Nothing to delete
+      await _supabase.from('profiles').update({
+        'payment_methods': methods,
+      }).eq('id', user.id);
 
-      // 2. Extract the file name from the URL
-      // E.g., https://.../avatars/user123.png?t=123 -> user123.png
-      final uri = Uri.parse(currentUrl);
-      final fileName = uri.pathSegments.last;
-
-      // 3. Delete the file from the 'avatars' storage bucket
-      await _supabase.storage.from('avatars').remove([fileName]);
-
-      // 4. Clear the avatar_url in the profiles database table
-      await _supabase.from('profiles').update({'avatar_url': null}).eq('id', user.id);
-
-      // 5. Instantly clear the UI globally
-      UserData.userProfilePic.value = '';
-
-      return null; // Success!
     } catch (e) {
-      debugPrint("Delete Image Error: $e");
-      return "Failed to delete image: $e";
+      debugPrint("Payment Sync Error: $e");
     }
   }
 
-  // 🟢 7. UPDATE PASSWORD
-  // 🟢 7. UPDATE PASSWORD (SECURE)
-  static Future<String?> updatePassword({required String currentPassword, required String newPassword}) async {
-    try {
-      final user = _supabase.auth.currentUser;
-      if (user == null || user.email == null) return "User not logged in";
-
-      // 1. Verify the current password by doing a "silent login"
-      try {
-        await _supabase.auth.signInWithPassword(email: user.email!, password: currentPassword);
-      } on AuthException catch (_) {
-        return "Incorrect current password."; // 🔴 Blocks the update!
-      }
-
-      // 2. If the silent login succeeds, they know the old password. Update to the new one!
-      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
-      return null; // Success
-    } catch (e) {
-      debugPrint("Update Password Error: $e");
-      return "Failed to update password.";
-    }
-  }
-
-  // 🟢 6. AUTO-SYNC ON STARTUP
+  // 🟢 7. AUTO-SYNC ON STARTUP (Pulls DOB, Address, and Payments)
   static Future<void> syncUserOnStartup() async {
     final user = _supabase.auth.currentUser;
     if (user != null) {
@@ -191,10 +152,89 @@ class SupabaseService {
         UserData.userPhone.value = profileData['phone'] ?? '';
         UserData.userProfilePic.value = profileData['avatar_url'] ?? '';
 
+        // 🟢 PULL NEW E-COMMERCE DATA
+        UserData.userDob.value = profileData['dob'] ?? '';
+        UserData.userLocation.value = profileData['address'] ?? '';
+
+        if (profileData['payment_methods'] != null) {
+          UserData.savedPaymentMethods.value = List<Map<String, dynamic>>.from(profileData['payment_methods']);
+        }
+
         debugPrint("✅ Startup Sync Complete: ${UserData.userName.value}");
       } catch (e) {
         debugPrint("❌ Startup Sync Failed: $e");
       }
+    }
+  }
+
+  // 🟢 8. UPLOAD PROFILE PICTURE
+  static Future<String?> uploadProfileImage(File imageFile) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return "User not logged in";
+
+      final fileExtension = imageFile.path.split('.').last;
+      final fileName = '${user.id}.$fileExtension';
+
+      await _supabase.storage.from('avatars').upload(
+        fileName,
+        imageFile,
+        fileOptions: const FileOptions(upsert: true),
+      );
+
+      String publicUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      publicUrl = '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _supabase.from('profiles').update({'avatar_url': publicUrl}).eq('id', user.id);
+      UserData.userProfilePic.value = publicUrl;
+
+      return null;
+    } catch (e) {
+      return "Failed to upload image: $e";
+    }
+  }
+
+  // 🟢 9. DELETE PROFILE PICTURE
+  static Future<String?> deleteProfileImage() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return "User not logged in";
+
+      final currentUrl = UserData.userProfilePic.value;
+      if (currentUrl.isEmpty) return null;
+
+      final uri = Uri.parse(currentUrl);
+      final fileName = uri.pathSegments.last;
+
+      await _supabase.storage.from('avatars').remove([fileName]);
+      await _supabase.from('profiles').update({'avatar_url': null}).eq('id', user.id);
+
+      UserData.userProfilePic.value = '';
+
+      return null;
+    } catch (e) {
+      debugPrint("Delete Image Error: $e");
+      return "Failed to delete image: $e";
+    }
+  }
+
+  // 🟢 10. UPDATE PASSWORD (SECURE)
+  static Future<String?> updatePassword({required String currentPassword, required String newPassword}) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null || user.email == null) return "User not logged in";
+
+      try {
+        await _supabase.auth.signInWithPassword(email: user.email!, password: currentPassword);
+      } on AuthException catch (_) {
+        return "Incorrect current password.";
+      }
+
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      return null;
+    } catch (e) {
+      debugPrint("Update Password Error: $e");
+      return "Failed to update password.";
     }
   }
 }

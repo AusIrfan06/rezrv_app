@@ -16,9 +16,12 @@ class AccountDetailsScreen extends StatefulWidget {
 class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // 🟢 1. ADDED NEW CONTROLLERS FOR E-COMMERCE
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  late TextEditingController _dobController;
+  late TextEditingController _addressController;
   late TextEditingController _currentPasswordController;
   late TextEditingController _newPasswordController;
 
@@ -32,6 +35,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     _nameController = TextEditingController(text: UserData.userName.value);
     _emailController = TextEditingController(text: UserData.userEmail.value);
     _phoneController = TextEditingController(text: UserData.userPhone.value);
+    _dobController = TextEditingController(text: UserData.userDob.value); // 🟢 NEW
+    _addressController = TextEditingController(text: UserData.userLocation.value); // 🟢 NEW
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
   }
@@ -41,6 +46,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _dobController.dispose();
+    _addressController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     super.dispose();
@@ -50,22 +57,22 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
+      // 🟢 2. SAVE THE NEW DATA TO GLOBAL STATE
       await UserData.updateProfile(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
+        dob: _dobController.text.trim(),
       );
+
+      // Update location/address manually since it has a separate global notifier
+      UserData.userLocation.value = _addressController.text.trim();
 
       final currentPass = _currentPasswordController.text.trim();
       final newPass = _newPasswordController.text.trim();
 
-      if (newPass.isNotEmpty) {
-        if (currentPass.isEmpty) {
-          setState(() => _isLoading = false);
-          showGlassToast(context, "Please enter your current password to confirm changes.", isError: true);
-          return;
-        }
-
+      // 🟢 3. ONLY TRIGGER PASSWORD CLOUD UPDATE IF THEY TYPED SOMETHING
+      if (newPass.isNotEmpty && currentPass.isNotEmpty) {
         final passError = await SupabaseService.updatePassword(
             currentPassword: currentPass,
             newPassword: newPass
@@ -87,7 +94,21 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     }
   }
 
+  // 🟢 4. FIXED PASSWORD VALIDATION LOGIC
+  String? _validateCurrentPassword(String? value) {
+    // If they typed a NEW password, they MUST provide the current one
+    if (_newPasswordController.text.isNotEmpty && (value == null || value.isEmpty)) {
+      return "Required to change password";
+    }
+    return null; // Otherwise, completely optional!
+  }
+
   String? _validateNewPassword(String? value) {
+    // If they typed their CURRENT password, they MUST provide a new one
+    if (_currentPasswordController.text.isNotEmpty && (value == null || value.isEmpty)) {
+      return "Required to change password";
+    }
+    // If both are empty, ignore validation completely!
     if (value == null || value.isEmpty) {
       return null;
     }
@@ -135,7 +156,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Public Profile", style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    Text("PUBLIC PROFILE", style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     const SizedBox(height: 12),
 
                     GlassContainer(
@@ -150,13 +171,39 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             _buildPremiumInput(isDark: isDark, label: "Email Address (Read Only)", controller: _emailController, icon: HugeIcons.strokeRoundedMail01, keyboardType: TextInputType.emailAddress, readOnly: true),
                             const SizedBox(height: 16),
                             _buildPremiumInput(isDark: isDark, label: "Phone Number", controller: _phoneController, icon: HugeIcons.strokeRoundedCall02, keyboardType: TextInputType.phone),
+                            const SizedBox(height: 16),
+                            _buildPremiumInput(isDark: isDark, label: "Date of Birth", controller: _dobController, icon: HugeIcons.strokeRoundedCalendar01, keyboardType: TextInputType.datetime), // 🟢 NEW DOB FIELD
                           ],
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 32),
-                    Text("Security", style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    Text("SHIPPING DETAILS", style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    const SizedBox(height: 12),
+
+                    // 🟢 5. NEW E-COMMERCE SHIPPING SECTION
+                    GlassContainer(
+                      useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(24.0), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0)),
+                        child: Column(
+                          children: [
+                            _buildPremiumInput(
+                                isDark: isDark,
+                                label: "Primary Delivery Address",
+                                controller: _addressController,
+                                icon: HugeIcons.strokeRoundedLocation01,
+                                keyboardType: TextInputType.streetAddress
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                    Text("SECURITY", style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     const SizedBox(height: 12),
 
                     GlassContainer(
@@ -169,6 +216,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             _buildPremiumInput(
                               isDark: isDark, label: "Current Password", controller: _currentPasswordController, icon: HugeIcons.strokeRoundedLockPassword,
                               isPassword: true, obscureText: _obscureCurrentPass, onToggleObscure: () => setState(() => _obscureCurrentPass = !_obscureCurrentPass),
+                              validator: _validateCurrentPassword, // 🟢 NOW USES CUSTOM LOGIC
                             ),
                             const SizedBox(height: 16),
                             _buildPremiumInput(
@@ -221,6 +269,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
             obscureText: obscureText,
             readOnly: readOnly,
             style: TextStyle(color: isDark ? (readOnly ? Colors.white54 : Colors.white) : (readOnly ? Colors.black54 : Colors.black87), fontWeight: FontWeight.w600, fontSize: 14),
+            // 🟢 If no custom validator is passed, it only checks if empty.
             validator: validator ?? (value) => value == null || value.isEmpty && !readOnly ? "Required" : null,
             decoration: InputDecoration(
               prefixIcon: Padding(padding: const EdgeInsets.only(right: 14.0), child: HugeIcon(icon: icon, color: Colors.grey, size: 20)),

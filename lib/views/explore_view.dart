@@ -15,6 +15,9 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/shop_detail_screen.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import '../services/supabase_service.dart';
+import '../utils/glass_toast.dart';
+import '../screens/auth_screen.dart'; // Make sure this matches your auth screen file name
 
 enum ShopStatus { open, closingSoon, closed }
 
@@ -2136,18 +2139,35 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    // 🟢 BUTTON 2: Rezrv Now (Primary)
+                                    // 🟢 BUTTON 2: Rezrv Now (WITH AUTH GUARD)
                                     Expanded(
                                       child: _AnimatedPressable(
                                         onTap: () {
                                           _searchFocus.unfocus();
                                           Navigator.pop(context); // Close the bottom sheet
-                                          // Navigate straight to checkout
-                                          Navigator.push(context, MaterialPageRoute(builder: (context) => BookingsView(
-                                            shopName: shop['name'] ?? "Unknown",
-                                            category: shop['category']?.toString().toUpperCase() ?? "SERVICE",
-                                            shopImage: shop['image'] ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400",
-                                          )));
+
+                                          // 🟢 THE AUTH GUARD LOGIC
+                                          if (SupabaseService.isUserLoggedIn()) {
+                                            // ✅ USER IS LOGGED IN: Proceed to checkout/booking!
+                                            Navigator.push(context, MaterialPageRoute(builder: (context) => BookingsView(
+                                              shopName: shop['name'] ?? "Unknown",
+                                              category: shop['category']?.toString().toUpperCase() ?? "SERVICE",
+                                              shopImage: shop['image'] ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400",
+                                            )));
+                                          } else {
+                                            // ❌ USER IS GUEST: Show Toast and Redirect to Login!
+                                            showGlassToast(
+                                                context,
+                                                "Please sign in or register to make a reservation.",
+                                                isError: true
+                                            );
+
+                                            // Send them to the Auth Screen
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const AuthScreen()),
+                                            );
+                                          }
                                         },
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(vertical: 18),

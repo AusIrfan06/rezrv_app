@@ -1,127 +1,109 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // 🟢 Required for saving Payment Lists
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../services/supabase_service.dart';
 
 class UserData {
-  static const _platform = MethodChannel('com.rezrv.app/security');
+  static const _storage = FlutterSecureStorage();
 
-  // --- Global State Notifiers ---
-  static final ValueNotifier<String> userName = ValueNotifier("");
-  static final ValueNotifier<String> userEmail = ValueNotifier("");
-  static final ValueNotifier<String> userPhone = ValueNotifier("");
-  static final ValueNotifier<String> userDob = ValueNotifier("");
-  static final ValueNotifier<String> userLocation = ValueNotifier("");
-  static final ValueNotifier<String> userProfilePic = ValueNotifier("");
+  // 🟢 BLANK TEMPLATES: Core User Data
+  static final ValueNotifier<String> userName = ValueNotifier<String>('');
+  static final ValueNotifier<String> userEmail = ValueNotifier<String>('');
+  static final ValueNotifier<String> userPhone = ValueNotifier<String>('');
+  static final ValueNotifier<String> userProfilePic = ValueNotifier<String>('');
+  static final ValueNotifier<String> userLocation = ValueNotifier<String>(''); // Used for Address
+  static final ValueNotifier<String> userDob = ValueNotifier<String>('');
 
-  // Security Notifiers
-  static final ValueNotifier<bool> appLockEnabled = ValueNotifier(false);
-  static final ValueNotifier<int> appLockTimeout = ValueNotifier(0);
-  static final ValueNotifier<bool> hideContentEnabled = ValueNotifier(false);
-  static final ValueNotifier<bool> twoFactorEnabled = ValueNotifier(false);
-  static final ValueNotifier<bool> locationEnabled = ValueNotifier(true);
+  // 🟢 BLANK TEMPLATES: Settings & Security
+  static final ValueNotifier<bool> appLockEnabled = ValueNotifier<bool>(false);
+  static final ValueNotifier<int> appLockTimeout = ValueNotifier<int>(0);
+  static final ValueNotifier<bool> hideContentEnabled = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> locationEnabled = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> twoFactorEnabled = ValueNotifier<bool>(false);
 
-  // Payment Notifier
-  static final ValueNotifier<List<Map<String, dynamic>>> savedPaymentMethods = ValueNotifier([]);
+  // 🟢 BLANK TEMPLATES: Payment Methods
+  static final ValueNotifier<List<Map<String, dynamic>>> savedPaymentMethods = ValueNotifier<List<Map<String, dynamic>>>([]);
 
-  // 🟢 1. Load EVERYTHING from disk (Disk -> RAM)
+  // 🟢 LOAD FROM DEVICE (Only loads app settings, NOT secure cloud data)
   static Future<void> loadSavedData() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Profile Data
-    userName.value = prefs.getString('userName') ?? "Firdaus Irfan";
-    userEmail.value = prefs.getString('userEmail') ?? "ausirfan0@gmail.com";
-    userPhone.value = prefs.getString('userPhone') ?? "+60 11-1589 2468";
-    userDob.value = prefs.getString('userDob') ?? "11/01/2006";
-    userLocation.value = prefs.getString('userLocation') ?? "";
-    userProfilePic.value = prefs.getString('userProfilePic') ?? "";
-
-    // Security States
-    appLockEnabled.value = prefs.getBool('appLockEnabled') ?? false;
-    appLockTimeout.value = prefs.getInt('appLockTimeout') ?? 0;
-    hideContentEnabled.value = prefs.getBool('hideContentEnabled') ?? false;
-    twoFactorEnabled.value = prefs.getBool('twoFactorEnabled') ?? false;
-    locationEnabled.value = prefs.getBool('locationEnabled') ?? true;
-
-    // 🟢 Load Payment Methods (JSON String -> List)
-    String? paymentsJson = prefs.getString('savedPaymentMethods');
-    if (paymentsJson != null) {
-      List<dynamic> decoded = jsonDecode(paymentsJson);
-      savedPaymentMethods.value = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
-    }
-
-    await applySecuritySideEffects();
-  }
-
-  // 🟢 2. Update Profile & Save (RAM -> Disk)
-  static Future<void> updateProfile({
-    String? name, String? email, String? phone, String? dob, String? location, String? profilePic,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (name != null) { userName.value = name; await prefs.setString('userName', name); }
-    if (email != null) { userEmail.value = email; await prefs.setString('userEmail', email); }
-    if (phone != null) { userPhone.value = phone; await prefs.setString('userPhone', phone); }
-    if (dob != null) { userDob.value = dob; await prefs.setString('userDob', dob); }
-    if (location != null) { userLocation.value = location; await prefs.setString('userLocation', location); }
-    if (profilePic != null) { userProfilePic.value = profilePic; await prefs.setString('userProfilePic', profilePic); }
-  }
-
-  // 🟢 3. Toggle Security & Save (RAM -> Disk)
-  static Future<void> toggleSecuritySetting(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
-
-    if (key == 'appLockEnabled') appLockEnabled.value = value;
-    if (key == 'twoFactorEnabled') twoFactorEnabled.value = value;
-    if (key == 'locationEnabled') locationEnabled.value = value; // 🟢 Added missing key
-    if (key == 'hideContentEnabled') {
-      hideContentEnabled.value = value;
-      await applySecuritySideEffects();
-    }
-  }
-
-  static Future<void> applySecuritySideEffects() async {
     try {
-      await _platform.invokeMethod('setSecure', {'enable': hideContentEnabled.value});
+      final lockEnabledStr = await _storage.read(key: 'appLockEnabled');
+      if (lockEnabledStr != null) appLockEnabled.value = lockEnabledStr == 'true';
+
+      final lockTimeoutStr = await _storage.read(key: 'appLockTimeout');
+      if (lockTimeoutStr != null) appLockTimeout.value = int.tryParse(lockTimeoutStr) ?? 0;
+
+      final hideContentStr = await _storage.read(key: 'hideContentEnabled');
+      if (hideContentStr != null) hideContentEnabled.value = hideContentStr == 'true';
+
+      final locStr = await _storage.read(key: 'locationEnabled');
+      if (locStr != null) locationEnabled.value = locStr == 'true';
+
+      final twoFacStr = await _storage.read(key: 'twoFactorEnabled');
+      if (twoFacStr != null) twoFactorEnabled.value = twoFacStr == 'true';
     } catch (e) {
-      debugPrint("Native Security Error: $e");
+      debugPrint("Error loading local settings: $e");
     }
   }
 
-  // --- 🟢 4. Payment Methods Persistence Helpers ---
+  // 🟢 UPDATE LOCAL STATE AND PUSH TO CLOUD
+  static Future<void> updateProfile({String? name, String? email, String? phone, String? profilePic, String? dob, String? address}) async {
+    if (name != null) userName.value = name;
+    if (email != null) userEmail.value = email;
+    if (phone != null) userPhone.value = phone;
+    if (profilePic != null) userProfilePic.value = profilePic;
+    if (dob != null) userDob.value = dob;
+    if (address != null) userLocation.value = address;
 
-  static Future<void> _savePaymentsToDisk() async {
-    final prefs = await SharedPreferences.getInstance();
-    String encoded = jsonEncode(savedPaymentMethods.value);
-    await prefs.setString('savedPaymentMethods', encoded);
+    if (SupabaseService.isUserLoggedIn()) {
+      await SupabaseService.updateProfileDetails(
+        name: userName.value,
+        phone: userPhone.value,
+        dob: userDob.value,
+        address: userLocation.value,
+      );
+    }
   }
 
+  // 🟢 SECURITY TOGGLES
+  static Future<void> toggleSecuritySetting(String key, bool value) async {
+    if (key == 'appLockEnabled') appLockEnabled.value = value;
+    if (key == 'hideContentEnabled') hideContentEnabled.value = value;
+    if (key == 'locationEnabled') locationEnabled.value = value;
+    if (key == 'twoFactorEnabled') twoFactorEnabled.value = value;
+    await _storage.write(key: key, value: value.toString());
+  }
+
+  // 🟢 PAYMENT METHODS MANAGEMENT (Auto-syncs with the cloud!)
   static void addPaymentMethod(Map<String, dynamic> method) {
-    final currentList = List<Map<String, dynamic>>.from(savedPaymentMethods.value);
-    if (currentList.isEmpty) {
-      method["isPrimary"] = true;
-    } else if (method["isPrimary"] == true) {
-      for (var m in currentList) { m["isPrimary"] = false; }
-    }
+    final List<Map<String, dynamic>> currentList = List.from(savedPaymentMethods.value);
     currentList.add(method);
     savedPaymentMethods.value = currentList;
-    _savePaymentsToDisk(); // 🟢 Save after adding
-  }
-
-  static void removePaymentMethod(String id) {
-    final currentList = List<Map<String, dynamic>>.from(savedPaymentMethods.value);
-    currentList.removeWhere((m) => m["id"] == id);
-    if (currentList.isNotEmpty && !currentList.any((m) => m["isPrimary"] == true)) {
-      currentList[0]["isPrimary"] = true;
-    }
-    savedPaymentMethods.value = currentList;
-    _savePaymentsToDisk(); // 🟢 Save after removing
+    SupabaseService.syncPaymentMethodsToCloud(currentList);
   }
 
   static void setPrimaryPaymentMethod(String id) {
-    final currentList = List<Map<String, dynamic>>.from(savedPaymentMethods.value);
-    for (var m in currentList) { m["isPrimary"] = (m["id"] == id); }
+    final List<Map<String, dynamic>> currentList = List.from(savedPaymentMethods.value);
+    for (var i = 0; i < currentList.length; i++) {
+      currentList[i]["isPrimary"] = (currentList[i]["id"] == id);
+    }
     savedPaymentMethods.value = currentList;
-    _savePaymentsToDisk(); // 🟢 Save after updating primary
+    SupabaseService.syncPaymentMethodsToCloud(currentList);
+  }
+
+  static void removePaymentMethod(String id) {
+    final List<Map<String, dynamic>> currentList = List.from(savedPaymentMethods.value);
+    currentList.removeWhere((method) => method["id"] == id);
+    savedPaymentMethods.value = currentList;
+    SupabaseService.syncPaymentMethodsToCloud(currentList);
+  }
+
+  // 🟢 WIPE DATA ON LOGOUT
+  static Future<void> clearUserData() async {
+    userName.value = '';
+    userEmail.value = '';
+    userPhone.value = '';
+    userProfilePic.value = '';
+    userDob.value = '';
+    savedPaymentMethods.value = [];
   }
 }

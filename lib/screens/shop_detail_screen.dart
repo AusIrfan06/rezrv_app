@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'bookings_view.dart'; // 🟢 Make sure this points to your Bookings checkout screen!
 import 'package:rezrv/l10n/generated/app_localizations.dart';
+import '../services/supabase_service.dart';
+import '../utils/glass_toast.dart';
+import '../screens/auth_screen.dart'; // Make sure this matches your Auth Screen file name!
 
 class ShopDetailScreen extends StatelessWidget {
   final Map<String, dynamic> shop;
@@ -174,17 +177,32 @@ class ShopDetailScreen extends StatelessWidget {
               ),
               child: GestureDetector(
                 onTap: () {
-                  // 🟢 NAVIGATES TO BOOKING SCREEN & PASSES DATA
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BookingsView(
-                        shopName: shopName,
-                        category: category,
-                        shopImage: imgUrl,
+                  // 🟢 THE AUTH GUARD LOGIC
+                  if (SupabaseService.isUserLoggedIn()) {
+                    // ✅ USER IS LOGGED IN: Proceed to checkout!
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookingsView(
+                          shopName: shopName,
+                          category: category,
+                          shopImage: imgUrl,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    // ❌ USER IS GUEST: Block them and send to Auth Screen
+                    showGlassToast(
+                        context,
+                        "Please sign in or register to make a reservation.",
+                        isError: true
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AuthScreen()),
+                    );
+                  }
                 },
                 child: Container(
                   width: double.infinity,

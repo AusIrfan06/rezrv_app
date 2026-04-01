@@ -12,18 +12,19 @@ import '../screens/app_lock_screen.dart';
 import '../services/notification_service.dart';
 import '../data/notification_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/supabase_service.dart'; // 🟢 1. ADDED IMPORT FOR SUPABASE SERVICE
+import '../services/supabase_service.dart';
 
 // 🟢 GLOBAL VARIABLES FOR CLEAN ROUTING
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 bool isBypassingLock = false;
-bool isAppCurrentlyLocked = false;
+
+// 🟢 FIX 1: Start this as TRUE. This forces ANY startup notifications to "park" safely in the variable.
+bool isAppCurrentlyLocked = true;
 Widget? pendingNotificationRoute;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🟢 BULLETPROOF STARTUP: Wrap everything in a try-catch so the app NEVER freezes
   try {
     // 1. Initialize Supabase
     await Supabase.initialize(
@@ -41,13 +42,14 @@ void main() async {
     await NotificationData.loadNotifications();
     await LocalNotificationService.initialize();
 
+    // 4. Check for cold-start notifications
+    await LocalNotificationService.checkInitialNotification();
+
   } catch (e) {
-    // If ANYTHING fails (no internet, secure storage error, etc.),
-    // it prints the error here instead of permanently freezing your app!
     debugPrint("❌ CRITICAL STARTUP ERROR CAUGHT: $e");
   }
 
-  // 🟢 4. runApp is safely OUTSIDE the try-catch. It will ALWAYS fire now!
+  // 5. Run the app!
   runApp(const RezrvApp(startLocked: false));
 }
 
@@ -69,8 +71,27 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _isLocked = widget.startLocked;
+
+    // 🟢 FIX 2: Now that the app is building, we set the REAL lock status
     isAppCurrentlyLocked = widget.startLocked;
+
     WidgetsBinding.instance.addObserver(this);
+
+    // 🟢 FIX 3: IF THE APP BOOTS UNLOCKED, SAFELY PUSH THE TICKET AFTER DRAWING THE SCREEN!
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isLocked && pendingNotificationRoute != null) {
+        // Grab it and clear it instantly
+        final ticketScreenToPush = pendingNotificationRoute!;
+        pendingNotificationRoute = null;
+
+        // Wait a tiny fraction of a second for MainScreen to finish drawing, then push ticket!
+        Future.delayed(const Duration(milliseconds: 200), () {
+          navigatorKey.currentState?.push(
+              MaterialPageRoute(builder: (_) => ticketScreenToPush)
+          );
+        });
+      }
+    });
   }
 
   @override
@@ -105,7 +126,7 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
     }
   }
 
-  // 🟢 CENTRALIZED ROUTING HUB
+  // 🟢 CENTRALIZED ROUTING HUB (For when the app was locked)
   void _handleUnlock() {
     isAppCurrentlyLocked = false;
     setState(() => _isLocked = false);
@@ -118,10 +139,14 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
 
     // 2. If a notification was waiting for you, pop the ticket cleanly on top!
     if (pendingNotificationRoute != null) {
-      navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => pendingNotificationRoute!)
-      );
-      pendingNotificationRoute = null; // Clear it out
+      final ticketScreenToPush = pendingNotificationRoute!;
+      pendingNotificationRoute = null;
+
+      Future.delayed(const Duration(milliseconds: 150), () {
+        navigatorKey.currentState?.push(
+            MaterialPageRoute(builder: (_) => ticketScreenToPush)
+        );
+      });
     }
   }
 

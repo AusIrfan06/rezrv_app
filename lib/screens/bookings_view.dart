@@ -10,6 +10,7 @@ import 'package:rezrv/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/user_data.dart';
 import '../services/notification_service.dart'; // 🟢 ADD THIS LINE
+import '../utils/glass_toast.dart'; // 🟢 ADD THIS TO YOUR IMPORTS
 
 class BookingsView extends StatefulWidget {
   final String shopName;
@@ -481,64 +482,11 @@ class _BookingsViewState extends State<BookingsView> {
                     if (_selectedPaymentIndex == 0) {
                       final hasCards = UserData.savedPaymentMethods.value.any((m) => m["type"] == "card");
                       if (!hasCards) {
-                        // 🟢 NEW: Red Glassmorphic Warning Popup
-                        showDialog(
-                          context: context,
-                          barrierColor: Colors.black.withOpacity(0.5),
-                          builder: (dialogContext) => BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Dialog(
-                              backgroundColor: Colors.transparent,
-                              elevation: 0,
-                              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-                              child: Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.redAccent.withOpacity(0.15) : Colors.redAccent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(28),
-                                  border: Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
-                                  boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.2), blurRadius: 30, offset: const Offset(0, 10))],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.2), shape: BoxShape.circle),
-                                      child: const Icon(Icons.credit_card_off_rounded, color: Colors.redAccent, size: 36),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Text("No Card Found", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                                    const SizedBox(height: 10),
-                                    Text("Please add a Credit or Debit Card before proceeding to checkout.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.black54, height: 1.4)),
-                                    const SizedBox(height: 28),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextButton(
-                                            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
-                                            onPressed: () => Navigator.pop(dialogContext),
-                                            child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: TextButton(
-                                            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), backgroundColor: Colors.redAccent),
-                                            onPressed: () {
-                                              Navigator.pop(dialogContext); // Close the warning
-                                              _showAddCardSheet(context, isDark); // Open the Add Card sheet
-                                            },
-                                            child: const Text("Add Card", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                        // 🟢 CHANGED: Sleek red Glass Toast instead of popup/snackbar
+                        showGlassToast(
+                            context,
+                            "Please add a Credit or Debit Card first.",
+                            isError: true
                         );
                         return; // Stop the booking process!
                       }
