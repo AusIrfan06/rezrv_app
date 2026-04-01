@@ -120,10 +120,18 @@ class GlassNavigationBar extends StatelessWidget {
                       // ==========================================
                       // 2. THE FOREGROUND ICONS (Clickable)
                       // ==========================================
+                      // ==========================================
+                      // 2. THE FOREGROUND ICONS (Clickable)
+                      // ==========================================
                       Row(
                         children: List.generate(items.length, (i) {
                           final isSelected = selectedIndex == i;
                           final double targetWidth = isSelected ? activeWidth : inactiveWidth;
+
+                          // 🟢 THE FIX: Simple Grey coloring for light mode, no shadows or stacks.
+                          final Color itemColor = isDark
+                              ? (isSelected ? Colors.white : Colors.white70)
+                              : (isSelected ? Colors.grey.shade900 : Colors.grey.shade600);
 
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 350),
@@ -133,26 +141,22 @@ class GlassNavigationBar extends StatelessWidget {
                             child: GestureDetector(
                               onTap: () => onItemSelected(i),
                               behavior: HitTestBehavior.opaque,
-
-                              // 1. ClipRect hides anything that bleeds out of the box
                               child: ClipRect(
-                                // 2. OverflowBox stops the Row from throwing layout errors!
                                 child: OverflowBox(
-                                  maxWidth: activeWidth, // Gives it plenty of room to calculate
+                                  maxWidth: activeWidth,
                                   alignment: Alignment.center,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      // 🟢 Back to a clean, simple icon
                                       HugeIcon(
                                         icon: items[i].icon,
-                                        color: isSelected
-                                            ? (isDark ? Colors.white : Colors.black87)
-                                            : (isDark ? Colors.white70 : Colors.black54),
+                                        color: itemColor,
                                         size: 24,
                                         strokeWidth: 2.1,
                                       ),
-                                      // 3. AnimatedSize makes the text smoothly glide in/out
+
                                       AnimatedSize(
                                         duration: const Duration(milliseconds: 350),
                                         curve: Curves.easeOutCubic,
@@ -164,7 +168,7 @@ class GlassNavigationBar extends StatelessWidget {
                                             items[i].title,
                                             maxLines: 1,
                                             style: TextStyle(
-                                              color: isDark ? Colors.white : Colors.black87,
+                                              color: itemColor,
                                               fontWeight: FontWeight.w900,
                                               fontSize: 13,
                                             ),

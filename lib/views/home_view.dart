@@ -11,6 +11,7 @@ import '../screens/shop_detail_screen.dart';
 import '../data/user_data.dart';
 import '../screens/notifications_screen.dart';
 import '../services/supabase_service.dart';
+import '../data/notification_data.dart'; // 🟢 ADD THIS LINE
 
 
 class HomeView extends StatefulWidget {
@@ -195,112 +196,132 @@ class _HomeViewState extends State<HomeView> {
                   children: [
                     // --- HEADER AREA ---
                     AnimatedBuilder(
-                        animation: Listenable.merge([UserData.userName, UserData.userProfilePic]),
+                      // 🟢 ADDED: NotificationData.unreadCount to the merge list
+                        animation: Listenable.merge([
+                          UserData.userName,
+                          UserData.userProfilePic,
+                          UserData.userLocation,
+                          NotificationData.unreadCount
+                        ]),
                         builder: (context, _) {
-                          // 🟢 1. Check if the user is actually logged in
                           final bool isLoggedIn = SupabaseService.isUserLoggedIn();
+                          // 🟢 Get the current unread count
+                          final int unreadCount = NotificationData.unreadCount.value;
 
-                          // 🟢 2. Determine the Greeting Text
-                          // We use a hardcoded "Guest" fallback to avoid the l10n error
                           final String displayName = isLoggedIn && UserData.userName.value.isNotEmpty
                               ? UserData.userName.value.split(" ")[0]
                               : "Guest";
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => Navigator.of(context, rootNavigator: true).push(
-                                          MaterialPageRoute(builder: (context) => const ProfileSettingsScreen())
-                                      ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: isDark ? Colors.white10 : Colors.black12,
-                                          border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 2),
-                                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
-                                        ),
-                                        child: ValueListenableBuilder<String>(
-                                          valueListenable: UserData.userProfilePic,
-                                          builder: (context, picPath, _) {
-                                            // 🟢 3. Only show the profile pic if logged in AND path exists
-                                            final bool showPic = isLoggedIn && picPath.isNotEmpty;
-
-                                            return CircleAvatar(
-                                              radius: 22,
-                                              backgroundColor: Colors.transparent,
-                                              backgroundImage: showPic
-                                                  ? (picPath.startsWith('http')
-                                                  ? NetworkImage(picPath) as ImageProvider
-                                                  : FileImage(File(picPath)) as ImageProvider)
-                                                  : null,
-                                              child: !showPic ? const Icon(Icons.person, color: Colors.grey, size: 20) : null,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    Stack(
-                                      children: [
-                                        _buildGlassIconButton(
-                                            Icons.notifications_none,
-                                            isDark,
-                                            textColor,
-                                                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))
-                                        ),
-                                        Positioned(
-                                          top: 10, right: 12,
-                                          child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
-                                        )
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-
-                              // --- 🟢 UPDATED GREETING ---
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                child: Text(
-                                  l10n.hiUser(displayName),
-                                  style: TextStyle(color: textColor, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-                                ),
-                              ),
-                            ],
-                          );
-                        }
-                    ),
-                    // --- 🟢 GREETING & LOCATION ---
-                    const SizedBox(height: 4),
-                    ValueListenableBuilder<String>(
-                        valueListenable: UserData.userLocation,
-                        builder: (context, location, child) {
+                          final location = UserData.userLocation.value;
                           final displayAddress = location.isEmpty ? l10n.locating : location;
+
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(Icons.location_on_rounded, color: Colors.blue, size: 18),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    displayAddress,
-                                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
-                                    overflow: TextOverflow.ellipsis,
+                                // 🟢 1. AVATAR CIRCLE (Left)
+                                GestureDetector(
+                                  onTap: () => Navigator.of(context, rootNavigator: true).push(
+                                      MaterialPageRoute(builder: (context) => const ProfileSettingsScreen())
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark ? Colors.white10 : Colors.black12,
+                                      border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 2),
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                                    ),
+                                    child: ValueListenableBuilder<String>(
+                                      valueListenable: UserData.userProfilePic,
+                                      builder: (context, picPath, _) {
+                                        final bool showPic = isLoggedIn && picPath.isNotEmpty;
+                                        return CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: Colors.transparent,
+                                          backgroundImage: showPic
+                                              ? (picPath.startsWith('http')
+                                              ? NetworkImage(picPath) as ImageProvider
+                                              : FileImage(File(picPath)) as ImageProvider)
+                                              : null,
+                                          child: !showPic ? const Icon(Icons.person, color: Colors.grey, size: 22) : null,
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 14),
+
+                                // 🟢 2. COLUMN: NAME & LOCATION (Middle)
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        l10n.hiUser(displayName),
+                                        // 👇 ADJUST DISPLAY NAME SIZE HERE (fontSize: 22)
+                                        style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: -0.5),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      // 👇 ADJUST SPACE BETWEEN NAME AND LOCATION HERE (height: 4)
+                                      const SizedBox(height: 0),
+                                      Row(
+                                        children: [
+                                          // 👇 ADJUST LOCATION PIN ICON SIZE HERE (size: 16)
+                                          const Icon(Icons.location_on_rounded, color: Colors.blue, size: 16),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              displayAddress,
+                                              // 👇 ADJUST LOCATION TEXT SIZE HERE (fontSize: 14)
+                                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 14, fontWeight: FontWeight.w600),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // 🟢 3. NOTIFICATION BUTTON (Right - Bare Icon Now!)
+                                // 🟢 3. NOTIFICATION BUTTON (Right - Bare Icon)
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                                      child: Icon(
+                                          Icons.notifications_none_rounded,
+                                          color: textColor,
+                                          size: 28
+                                      ),
+                                    ),
+
+                                    // 🟢 THE FIX: Only render the red dot if unreadCount is greater than 0
+                                    if (unreadCount > 0)
+                                      Positioned(
+                                        top: 2, right: 3,
+                                        child: Container(
+                                            width: 9, height: 9,
+                                            decoration: BoxDecoration(
+                                                color: Colors.redAccent,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1), width: 1.5)
+                                            )
+                                        ),
+                                      )
+                                  ],
+                                )
                               ],
                             ),
                           );
                         }
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
                     // --- PROMOTIONS TEXT ---
                     Padding(
