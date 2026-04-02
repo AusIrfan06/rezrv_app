@@ -11,14 +11,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/user_data.dart';
 import '../services/notification_service.dart'; // 🟢 ADD THIS LINE
 import '../utils/glass_toast.dart'; // 🟢 ADD THIS TO YOUR IMPORTS
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class BookingsView extends StatefulWidget {
+  final String shopId; // 🟢 ADD THIS
   final String shopName;
   final String category;
   final String shopImage;
 
   const BookingsView({
     super.key,
+    required this.shopId, // 🟢 ADD THIS
     this.shopName = "Zul Barber Shop",
     this.category = "Barber",
     this.shopImage = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400",
@@ -29,6 +33,8 @@ class BookingsView extends StatefulWidget {
 }
 
 class _BookingsViewState extends State<BookingsView> {
+  List<String> _bookedTimes = [];
+
   int _selectedDateIndex = 2;
   int _selectedTimeIndex = 4;
 
@@ -47,7 +53,7 @@ class _BookingsViewState extends State<BookingsView> {
   // 🟢 We save the ID here so the success screen can use it
   String _generatedBookingId = "";
 
-  final List<Map<String, String>> _doctors = [
+  final List<Map<String, String>> _staffs = [
     {"name": "Adi Mawi", "specialty": "Expert Barber", "rating": "5.0", "image": "https://i.pinimg.com/736x/cc/c9/00/ccc90020bb124a04b0e466657eb7c699.jpg?q=80&w=150"},
     {"name": "Haris Iqram", "specialty": "Senior Barber", "rating": "4.9", "image": "https://i.pinimg.com/736x/dc/a6/0d/dca60d053ada15f902394178dbe9d4a0.jpg?q=80&w=150"},
     {"name": "Zabir Kaza", "specialty": "Senior Barber", "rating": "4.8", "image": "https://i.pinimg.com/736x/c5/b0/3a/c5b03a796e2ec3ad8efd12795a393fa6.jpg?q=80&w=150"},
@@ -100,6 +106,22 @@ class _BookingsViewState extends State<BookingsView> {
     return "Checkout & payment:";
   }
 
+  bool _isTimeValid(String timeStr, int dateIndex) {
+    if (dateIndex < 0 || dateIndex >= _dates.length) return false;
+
+    // 🟢 THE NO FAKE HOPE CHECK: Hide it if someone else booked it!
+    if (_bookedTimes.contains(timeStr)) return false;
+
+    // Check if the time has passed today
+    if (dateIndex > 0) return true;
+
+    final now = DateTime.now();
+    final parts = timeStr.split(':');
+    final timeToCompare = DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
+
+    return timeToCompare.isAfter(now);
+  }
+
   String _shopName = '';
   String _selectedTime = '';
 
@@ -118,11 +140,52 @@ class _BookingsViewState extends State<BookingsView> {
     });
   }
 
+  Future<void> _fetchBookedTimes() async {
+    if (_dates.isEmpty) return;
+
+    final selectedDateStr = _dates[_selectedDateIndex]['fullDate']!.substring(0, 10); // Gets YYYY-MM-DD
+    final currentProvider = _staffs[_frontCardIndex]["name"]!; // 🟢 Add the '!' at the end
+
+    try {
+      final response = await Supabase.instance.client
+          .from('bookings')
+          .select('booking_time')
+          .eq('shop_id', widget.shopId)
+          .eq('provider_name', currentProvider)
+          .like('booking_time', '$selectedDateStr%');
+
+      if (mounted) {
+        setState(() {
+          // Convert database timestamps back into "HH:MM" format
+          _bookedTimes = response.map<String>((booking) {
+            final DateTime dt = DateTime.parse(booking['booking_time']).toLocal();
+            return "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
+          }).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching booked times: $e");
+    }
+  }
+
   // 🟢 Generates 60 days (~2 months) of valid upcoming dates
   void _generateUpcomingDates() {
     final now = DateTime.now();
     final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    final months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
 
     _dates.clear();
     for (int i = 0; i < 90; i++) {
@@ -131,26 +194,10 @@ class _BookingsViewState extends State<BookingsView> {
         "day": weekdays[date.weekday - 1],
         "date": date.day.toString(),
         "month": months[date.month - 1],
-        "fullDate": date.toIso8601String(), // Saves exact date for time validation
+        "fullDate": date.toIso8601String(),
+        // Saves exact date for time validation
       });
     }
-  }
-
-  // 🟢 Checks if the time slot has already passed today
-  bool _isTimeValid(String timeStr, int dateIndex) {
-    if (dateIndex < 0 || dateIndex >= _dates.length) return false;
-
-    // Index 0 is always "Today" in our generated list
-    if (dateIndex > 0) return true; // Future days are always valid
-
-    final now = DateTime.now();
-    final parts = timeStr.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
-
-    // Compare the slot time to the current time
-    final timeToCompare = DateTime(now.year, now.month, now.day, hour, minute);
-    return timeToCompare.isAfter(now);
   }
 
   // 🟢 Finds the very first available date and time slot
@@ -182,10 +229,10 @@ class _BookingsViewState extends State<BookingsView> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isFocused = _currentStep > 0 || _isSubmitted;
 
-    List<int> orderedIndices = List.generate(_doctors.length, (i) => i);
+    List<int> orderedIndices = List.generate(_staffs.length, (i) => i);
     orderedIndices.sort((a, b) {
-      int relA = (a - _frontCardIndex + _doctors.length) % _doctors.length;
-      int relB = (b - _frontCardIndex + _doctors.length) % _doctors.length;
+      int relA = (a - _frontCardIndex + _staffs.length) % _staffs.length;
+      int relB = (b - _frontCardIndex + _staffs.length) % _staffs.length;
       return relB.compareTo(relA);
     });
 
@@ -257,9 +304,9 @@ class _BookingsViewState extends State<BookingsView> {
                           if (isFocused) return;
                           if (details.primaryVelocity == null) return;
                           if (details.primaryVelocity! > 300) {
-                            setState(() => _frontCardIndex = (_frontCardIndex + 1) % _doctors.length);
+                            setState(() => _frontCardIndex = (_frontCardIndex + 1) % _staffs.length);
                           } else if (details.primaryVelocity! < -300) {
-                            setState(() => _frontCardIndex = (_frontCardIndex - 1 + _doctors.length) % _doctors.length);
+                            setState(() => _frontCardIndex = (_frontCardIndex - 1 + _staffs.length) % _staffs.length);
                           }
                         },
                         child: SizedBox(
@@ -267,7 +314,7 @@ class _BookingsViewState extends State<BookingsView> {
                           child: Stack(
                             alignment: Alignment.topCenter,
                             children: orderedIndices.map((index) {
-                              int relativePosition = (index - _frontCardIndex + _doctors.length) % _doctors.length;
+                              int relativePosition = (index - _frontCardIndex + _staffs.length) % _staffs.length;
 
                               double top; double scale; double opacity;
 
@@ -309,7 +356,7 @@ class _BookingsViewState extends State<BookingsView> {
                                       },
                                       child: AbsorbPointer(
                                         absorbing: relativePosition != 0,
-                                        child: _buildExpandedGlassCard(_doctors[index], isDark, isFocused),
+                                        child: _buildExpandedGlassCard(_staffs[index], isDark, isFocused),
                                       ),
                                     ),
                                   ),
@@ -357,7 +404,7 @@ class _BookingsViewState extends State<BookingsView> {
     return _AnimatedPressable(onTap: () {}, child: _buildGlassBox(isDark: isDark, radius: 100, height: 44, padding: const EdgeInsets.symmetric(horizontal: 16), child: Center(child: Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)))));
   }
 
-  Widget _buildExpandedGlassCard(Map<String, String> doctor, bool isDark, bool isFocused) {
+  Widget _buildExpandedGlassCard(Map<String, String> staff, bool isDark, bool isFocused) {
     Widget contentSwitcher = AnimatedSwitcher(
       duration: const Duration(milliseconds: 600),
       switchInCurve: Curves.easeOutBack,
@@ -368,7 +415,7 @@ class _BookingsViewState extends State<BookingsView> {
           children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
         );
       },
-      child: _isSubmitted ? _buildSuccessState(isDark) : _buildBookingFlow(isDark, doctor, isFocused),
+      child: _isSubmitted ? _buildSuccessState(isDark) : _buildBookingFlow(isDark, staff, isFocused),
     );
 
     return _buildGlassBox(
@@ -393,21 +440,21 @@ class _BookingsViewState extends State<BookingsView> {
                 children: [
                   Container(
                       decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]),
-                      child: CircleAvatar(backgroundImage: NetworkImage(doctor["image"]!), radius: 24)
+                      child: CircleAvatar(backgroundImage: NetworkImage(staff["image"]!), radius: 24)
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(doctor["name"]!, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                        Text(doctor["specialty"]!, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[700])),
+                        Text(staff["name"]!, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                        Text(staff["specialty"]!, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[700])),
                       ],
                     ),
                   ),
                   const Icon(Icons.star, color: Colors.amber, size: 16),
                   const SizedBox(width: 4),
-                  Text(doctor["rating"]!, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.blue)),
+                  Text(staff["rating"]!, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.blue)),
                 ],
               ),
             )
@@ -419,7 +466,7 @@ class _BookingsViewState extends State<BookingsView> {
     );
   }
 
-  Widget _buildBookingFlow(bool isDark, Map<String, String> doctor, bool isFocused) {
+  Widget _buildBookingFlow(bool isDark, Map<String, String> staff, bool isFocused) {
     Widget stepSwitcher = AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
       switchInCurve: Curves.easeOutQuint,
@@ -430,7 +477,7 @@ class _BookingsViewState extends State<BookingsView> {
           children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
         );
       },
-      child: _buildCurrentStep(isDark, doctor),
+      child: _buildCurrentStep(isDark, staff),
     );
 
     return Column(
@@ -474,28 +521,51 @@ class _BookingsViewState extends State<BookingsView> {
             ],
             Expanded(
               child: _AnimatedPressable(
-                onTap: () {
+                onTap: () async {
                   if (_currentStep < 2) {
                     setState(() => _currentStep++);
                   } else {
-                    // 🟢 FIXED: Prevent checkout if "Card" is selected but no cards exist
                     if (_selectedPaymentIndex == 0) {
                       final hasCards = UserData.savedPaymentMethods.value.any((m) => m["type"] == "card");
                       if (!hasCards) {
-                        // 🟢 CHANGED: Sleek red Glass Toast instead of popup/snackbar
-                        showGlassToast(
-                            context,
-                            "Please add a Credit or Debit Card first.",
-                            isError: true
-                        );
-                        return; // Stop the booking process!
+                        showGlassToast(context, "Please add a Credit or Debit Card first.", isError: true);
+                        return;
                       }
                     }
 
-                    // 🟢 Proceed with Booking if validation passes
                     final dateStr = "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}";
                     final timeStr = _times[_selectedTimeIndex];
                     final String bId = "RZRV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}";
+
+                    final parsedDate = DateTime.parse(_dates[_selectedDateIndex]['fullDate']!);
+                    final timeParts = timeStr.split(':');
+                    final finalBookingTime = DateTime(
+                        parsedDate.year, parsedDate.month, parsedDate.day,
+                        int.parse(timeParts[0]), int.parse(timeParts[1])
+                    ).toIso8601String();
+
+                    try {
+                      await Supabase.instance.client.from('bookings').insert({
+                        'shop_id': widget.shopId,
+                        'customer_id': Supabase.instance.client.auth.currentUser!.id,
+                        'customer_name': UserData.userName.value.isNotEmpty ? UserData.userName.value : 'Walk-in',
+                        'provider_name': staff["name"],
+                        'service_id': _servicesList[_selectedServices.first]["name"],
+                        'booking_time': finalBookingTime,
+                        'status': 'pending',
+                      });
+                    } on PostgrestException catch (e) {
+                      if (e.code == '23505') {
+                        showGlassToast(context, "Oops! Someone just booked this slot. Please pick another time.", isError: true);
+                        _fetchBookedTimes();
+                      } else {
+                        showGlassToast(context, "Database error: ${e.message}", isError: true);
+                      }
+                      return;
+                    } catch (e) {
+                      showGlassToast(context, "Failed to connect. Try again.", isError: true);
+                      return;
+                    }
 
                     RezrvData.addReservation(
                       title: widget.shopName,
@@ -503,18 +573,16 @@ class _BookingsViewState extends State<BookingsView> {
                       date: dateStr,
                       img: widget.shopImage,
                       time: timeStr,
-                      providerName: doctor["name"]!,
+                      providerName: staff["name"]!,
                       totalPrice: "RM$_totalPrice",
                       bookingId: bId,
                     );
 
-                    // 🟢 ADD THIS LINE: Fires the OS Notification and saves it to the Glass UI!
-                    // 🟢 UPDATED: Send ALL the ticket data to the Notification Service!
                     LocalNotificationService.showBookingConfirmed(
                       shopName: widget.shopName,
                       category: widget.category,
                       shopImage: widget.shopImage,
-                      providerName: doctor["name"]!,
+                      providerName: staff["name"]!,
                       date: dateStr,
                       time: timeStr,
                       totalPrice: "RM$_totalPrice",
@@ -527,6 +595,7 @@ class _BookingsViewState extends State<BookingsView> {
                     });
                   }
                 },
+                // 🟢 FIXED: "child:" label is back where it belongs!
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
@@ -549,10 +618,10 @@ class _BookingsViewState extends State<BookingsView> {
     );
   }
 
-  Widget _buildCurrentStep(bool isDark, Map<String, String> doctor) {
+  Widget _buildCurrentStep(bool isDark, Map<String, String> staff) {
     if (_currentStep == 0) return _buildStepOneTimeSelection(isDark);
     if (_currentStep == 1) return _buildStepTwoServicesAndAddons(isDark);
-    return _buildStepThreeCheckout(isDark, doctor);
+    return _buildStepThreeCheckout(isDark, staff);
   }
 
   void _showAddCardSheet(BuildContext context, bool isDark) {
@@ -863,7 +932,7 @@ class _BookingsViewState extends State<BookingsView> {
     );
   }
 
-  Widget _buildStepThreeCheckout(bool isDark, Map<String, String> doctor) {
+  Widget _buildStepThreeCheckout(bool isDark, Map<String, String> staff) {
     return SingleChildScrollView(
       key: const ValueKey(2),
       child: Column(
@@ -892,7 +961,7 @@ class _BookingsViewState extends State<BookingsView> {
 
                 _buildSummaryRow("Location", widget.shopName, Icons.storefront, isDark),
                 const SizedBox(height: 12),
-                _buildSummaryRow("Provider", doctor["name"]!, Icons.person, isDark),
+                _buildSummaryRow("Provider", staff["name"]!, Icons.person, isDark),
                 const SizedBox(height: 12),
                 _buildSummaryRow("Date", "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}", Icons.calendar_month, isDark),                const SizedBox(height: 12),
                 _buildSummaryRow("Time", _times[_selectedTimeIndex], Icons.access_time_filled, isDark),
@@ -1247,7 +1316,7 @@ class _BookingsViewState extends State<BookingsView> {
                           shopName: widget.shopName,
                           category: widget.category,
                           shopImage: widget.shopImage,
-                          providerName: _doctors[_frontCardIndex]["name"]!,
+                          providerName: _staffs[_frontCardIndex]["name"]!,
                           date: "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}",                          time: _times[_selectedTimeIndex],
                           totalPrice: "RM$_totalPrice",
                           bookingId: _generatedBookingId,

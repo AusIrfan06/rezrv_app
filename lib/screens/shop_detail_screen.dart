@@ -180,10 +180,12 @@ class ShopDetailScreen extends StatelessWidget {
                   // 🟢 THE AUTH GUARD LOGIC
                   if (SupabaseService.isUserLoggedIn()) {
                     // ✅ USER IS LOGGED IN: Proceed to checkout!
+                    // ✅ USER IS LOGGED IN: Proceed to checkout!
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => BookingsView(
+                          shopId: shop["id"].toString(),
                           shopName: shopName,
                           category: category,
                           shopImage: imgUrl,

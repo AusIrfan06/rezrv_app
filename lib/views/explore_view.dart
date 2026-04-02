@@ -2150,9 +2150,10 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                           if (SupabaseService.isUserLoggedIn()) {
                                             // ✅ USER IS LOGGED IN: Proceed to checkout/booking!
                                             Navigator.push(context, MaterialPageRoute(builder: (context) => BookingsView(
-                                              shopName: shop['name'] ?? "Unknown",
-                                              category: shop['category']?.toString().toUpperCase() ?? "SERVICE",
-                                              shopImage: shop['image'] ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400",
+                                              shopId: shop["id"].toString(),
+                                              shopName: shop["name"] ?? "Unknown Shop",
+                                              category: shop["category"]?.toString().toUpperCase() ?? "SERVICE",
+                                              shopImage: shop["image"] ?? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400",
                                             )));
                                           } else {
                                             // ❌ USER IS GUEST: Show Toast and Redirect to Login!
