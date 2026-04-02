@@ -38,6 +38,7 @@ dependencies:
   http: ^1.2.0
   flutter_local_notifications: ^20.1.0
   supabase_flutter: ^2.12.2
+  google_fonts: ^6.2.1
 
 
 dev_dependencies:

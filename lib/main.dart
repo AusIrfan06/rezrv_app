@@ -13,6 +13,7 @@ import '../services/notification_service.dart';
 import '../data/notification_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // 🟢 GLOBAL VARIABLES FOR CLEAN ROUTING
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
