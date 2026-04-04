@@ -218,80 +218,83 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
     _fetchShopsFromDatabase();
   }
 
-  // 🟢 The Safe Fetch Pattern (Synced with 'businesses' table)
-  Future<void> _fetchShopsFromDatabase() async {
-    try {
-      // 1. Query the exact new table name 'businesses'
-      final data = await Supabase.instance.client
-          .from('businesses')
-          .select();
+  // 🟢 1. ADD THIS VARIABLE right above the fetch function
+  StreamSubscription<List<Map<String, dynamic>>>? _shopsSubscription;
 
-      if (mounted) {
-        setState(() {
-          // 2. THE TRANSFORMER: Map database columns to App UI variables
-          _realShops = data.map<Map<String, dynamic>>((row) {
+  // 🟢 2. REPLACE your old _fetchShopsFromDatabase with this real-time stream
+  void _fetchShopsFromDatabase() {
+    _shopsSubscription?.cancel(); // Kill any old streams
 
-            // --- Parse the Time Strings (e.g., "09:00" -> 9 and 0) ---
-            int parsedOpenHour = 9;
-            int parsedOpenMin = 0;
-            int parsedCloseHour = 22;
-            int parsedCloseMin = 0;
+    _shopsSubscription = Supabase.instance.client
+        .from('businesses')
+        .stream(primaryKey: ['id'])
+        .listen((data) {
+      if (!mounted) return;
 
-            try {
-              if (row['open_time'] != null) {
-                final parts = row['open_time'].toString().split(':');
-                parsedOpenHour = int.parse(parts[0]);
-                parsedOpenMin = int.parse(parts[1].split(' ')[0]); // Handles "AM/PM" if present
-              }
-              if (row['close_time'] != null) {
-                final parts = row['close_time'].toString().split(':');
-                parsedCloseHour = int.parse(parts[0]);
-                parsedCloseMin = int.parse(parts[1].split(' ')[0]);
-              }
-            } catch (_) {
-              // Silently fall back to 9am-10pm if the merchant left it blank
-            }
+      // Transform the raw DB data into your UI format
+      List<Map<String, dynamic>> updatedShops = data.map<Map<String, dynamic>>((row) {
 
-            // --- Return the Perfectly Formatted Map ---
-            return {
-              'id': row['id'],
-              'name': row['name'] ?? 'Unknown Business',
-              'category': row['category']?.toString().toLowerCase() ?? 'service',
+        int parsedOpenHour = 9; int parsedOpenMin = 0;
+        int parsedCloseHour = 22; int parsedCloseMin = 0;
 
-              // 🟢 CRITICAL: Merge DB 'lat' and 'lng' into a single LatLng object for the map!
-              'location': LatLng(
-                  (row['lat'] as num?)?.toDouble() ?? 0.0,
-                  (row['lng'] as num?)?.toDouble() ?? 0.0
-              ),
+        try {
+          if (row['open_time'] != null) {
+            final parts = row['open_time'].toString().split(':');
+            parsedOpenHour = int.parse(parts[0]);
+            parsedOpenMin = int.parse(parts[1].split(' ')[0]);
+          }
+          if (row['close_time'] != null) {
+            final parts = row['close_time'].toString().split(':');
+            parsedCloseHour = int.parse(parts[0]);
+            parsedCloseMin = int.parse(parts[1].split(' ')[0]);
+          }
+        } catch (_) {}
 
-              // Map DB names to UI names
-              'image': row['logo_url'] ?? "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300",
-              'phone': row['phone'],
-              'address': row['address'],
-              'openHour': parsedOpenHour,
-              'openMinute': parsedOpenMin,
-              'closeHour': parsedCloseHour,
-              'closeMinute': parsedCloseMin,
+        return {
+          'id': row['id'],
+          'name': row['name'] ?? 'Unknown Business',
+          'category': row['category']?.toString().toLowerCase() ?? 'service',
+          'location': LatLng(
+              (row['lat'] as num?)?.toDouble() ?? 0.0,
+              (row['lng'] as num?)?.toDouble() ?? 0.0
+          ),
+          'image': row['logo_url'] ?? "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300",
+          'phone': row['phone'],
+          'address': row['address'],
+          'openHour': parsedOpenHour,
+          'openMinute': parsedOpenMin,
+          'closeHour': parsedCloseHour,
+          'closeMinute': parsedCloseMin,
+          'rating': 4.8,
+          'reviews': 124,
+          'services': [row['category'] ?? 'General Services'],
+        };
+      }).toList();
 
-              // Mock data for things you haven't added to the DB schema yet!
-              'rating': 4.8,
-              'reviews': 124,
-              'services': [row['category'] ?? 'General Services'],
-            };
-          }).toList();
+      // 🟢 3. THE SORTING ENGINE: Nearest to Farthest
+      updatedShops.sort((a, b) {
+        double distanceA = Geolocator.distanceBetween(
+            _currentLocation.latitude, _currentLocation.longitude,
+            a['location'].latitude, a['location'].longitude
+        );
+        double distanceB = Geolocator.distanceBetween(
+            _currentLocation.latitude, _currentLocation.longitude,
+            b['location'].latitude, b['location'].longitude
+        );
+        return distanceA.compareTo(distanceB);
+      });
 
-          // 3. Push the transformed data to the UI arrays
-          _nearbyShops = List.from(_realShops);
+      // 4. Push to UI instantly
+      setState(() {
+        _realShops = updatedShops;
+        _nearbyShops = List.from(_realShops);
+
+        // Only override if they aren't actively searching
+        if (_searchController.text.isEmpty) {
           _displayedShops = List.from(_realShops);
-        });
-      }
-    } catch (e) {
-      debugPrint("Supabase Error: $e");
-
-      if (mounted) {
-        showGlassToast(context, "DB Error: ${e.toString().split('\n')[0]}", isError: true);
-      }
-    }
+        }
+      });
+    });
   }
 
   void _onSearchFocusChanged() {
@@ -304,6 +307,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
 
   @override
   void dispose() {
+    _shopsSubscription?.cancel();
     _minuteTicker?.cancel();
     _snapBackTimer?.cancel();
     _pageController.dispose();
