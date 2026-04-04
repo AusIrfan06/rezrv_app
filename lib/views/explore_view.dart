@@ -18,6 +18,7 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import '../services/supabase_service.dart';
 import '../utils/glass_toast.dart';
 import '../screens/auth_screen.dart'; // Make sure this matches your auth screen file name
+import 'package:supabase_flutter/supabase_flutter.dart'; 
 
 enum ShopStatus { open, closingSoon, closed }
 
@@ -81,6 +82,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
   Set<String> _expandedCategories = {};
   List<Map<String, dynamic>> _searchMatchedCategories = [];
   List<Map<String, dynamic>> _searchMatchedShops = [];
+
+  List<Map<String, dynamic>> _realShops = [];
 
   List<Map<String, dynamic>> _getCategoryTree(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -201,11 +204,94 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _nearbyShops = List.from(ShopData.shops);
-    _displayedShops = List.from(_nearbyShops); // 🟢 Must initialize this!
+
+    // 🟢 1. Initialize the PageController for your bottom carousel
     _pageController = PageController(viewportFraction: 0.85);
+
+    // 🟢 2. Attach the listener for the search bar focus
+    _searchFocus.addListener(_onSearchFocusChanged);
+
+    // 🟢 3. Start GPS tracking
     _initLocationTracking();
-    _searchFocus.addListener(_onSearchFocusChanged); // 🟢 Listens to keyboard
+
+    // 🟢 4. Fetch the data (using the correct method name)
+    _fetchShopsFromDatabase();
+  }
+
+  // 🟢 The Safe Fetch Pattern (Synced with 'businesses' table)
+  Future<void> _fetchShopsFromDatabase() async {
+    try {
+      // 1. Query the exact new table name 'businesses'
+      final data = await Supabase.instance.client
+          .from('businesses')
+          .select();
+
+      if (mounted) {
+        setState(() {
+          // 2. THE TRANSFORMER: Map database columns to App UI variables
+          _realShops = data.map<Map<String, dynamic>>((row) {
+
+            // --- Parse the Time Strings (e.g., "09:00" -> 9 and 0) ---
+            int parsedOpenHour = 9;
+            int parsedOpenMin = 0;
+            int parsedCloseHour = 22;
+            int parsedCloseMin = 0;
+
+            try {
+              if (row['open_time'] != null) {
+                final parts = row['open_time'].toString().split(':');
+                parsedOpenHour = int.parse(parts[0]);
+                parsedOpenMin = int.parse(parts[1].split(' ')[0]); // Handles "AM/PM" if present
+              }
+              if (row['close_time'] != null) {
+                final parts = row['close_time'].toString().split(':');
+                parsedCloseHour = int.parse(parts[0]);
+                parsedCloseMin = int.parse(parts[1].split(' ')[0]);
+              }
+            } catch (_) {
+              // Silently fall back to 9am-10pm if the merchant left it blank
+            }
+
+            // --- Return the Perfectly Formatted Map ---
+            return {
+              'id': row['id'],
+              'name': row['name'] ?? 'Unknown Business',
+              'category': row['category']?.toString().toLowerCase() ?? 'service',
+
+              // 🟢 CRITICAL: Merge DB 'lat' and 'lng' into a single LatLng object for the map!
+              'location': LatLng(
+                  (row['lat'] as num?)?.toDouble() ?? 0.0,
+                  (row['lng'] as num?)?.toDouble() ?? 0.0
+              ),
+
+              // Map DB names to UI names
+              'image': row['logo_url'] ?? "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300",
+              'phone': row['phone'],
+              'address': row['address'],
+              'openHour': parsedOpenHour,
+              'openMinute': parsedOpenMin,
+              'closeHour': parsedCloseHour,
+              'closeMinute': parsedCloseMin,
+
+              // Mock data for things you haven't added to the DB schema yet!
+              'rating': 4.8,
+              'reviews': 124,
+              'services': [row['category'] ?? 'General Services'],
+            };
+          }).toList();
+
+          // 3. Push the transformed data to the UI arrays
+          _nearbyShops = List.from(_realShops);
+          _displayedShops = List.from(_realShops);
+        });
+      }
+    } catch (e) {
+      debugPrint("Supabase Error: $e");
+
+      if (mounted) {
+        showGlassToast(context, "DB Error: ${e.toString().split('\n')[0]}", isError: true);
+      }
+    }
   }
 
   void _onSearchFocusChanged() {

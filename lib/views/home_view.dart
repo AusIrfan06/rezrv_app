@@ -79,30 +79,14 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    _startAdTimer();
-    _getCurrentLocation(); // 🟢 Fetch GPS as soon as screen loads
   }
 
-  Future<void> _getCurrentLocation() async {
-    // 🟢 REMOVED: The check that stopped the GPS from running if a cache existed.
-    // Now it will ALWAYS fetch your real live location silently in the background!
-
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    if (permission == LocationPermission.deniedForever) return;
-
+  Future<void> _forceRefreshLocation() async {
+    UserData.userLocation.value = "Locating...";
     try {
-      // 🟢 Fetch fresh, real-time location
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium, // Medium is faster and perfect for getting the City
-        timeLimit: const Duration(seconds: 10),
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
       );
 
       List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
@@ -112,11 +96,23 @@ class _HomeViewState extends State<HomeView> {
         String city = place.locality?.isNotEmpty == true ? place.locality! : (place.subAdministrativeArea ?? "Unknown City");
         String state = place.administrativeArea ?? "Unknown State";
 
-        // 🟢 Update the global state! This updates HomeView and ProfileScreen instantly.
+        // 🟢 SMART PARSER (MALAYSIA FIX)
+        final cityLower = city.toLowerCase();
+        if (cityLower.contains("taiping") || cityLower.contains("parit buntar") || cityLower.contains("kamunting")) {
+          state = "Perak";
+        } else if (cityLower.contains("nibong tebal")) {
+          state = "Penang";
+        } else if (cityLower.contains("sungai petani")) {
+          state = "Kedah";
+        }
+
+        if (state.contains("Pulau Pinang")) state = "Penang";
+        if (state.contains("Federal Territory of Kuala Lumpur")) state = "Kuala Lumpur";
+
         UserData.userLocation.value = "$city, $state";
       }
     } catch (e) {
-      debugPrint("HomeView GPS Error: $e");
+      UserData.userLocation.value = "Location unavailable";
     }
   }
 

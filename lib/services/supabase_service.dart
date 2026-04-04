@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/user_data.dart';
+import '../data/notification_data.dart'; // 🟢 ADD THIS so the service can update the number
 
 class SupabaseService {
   static final _supabase = Supabase.instance.client;
@@ -235,6 +236,47 @@ class SupabaseService {
     } catch (e) {
       debugPrint("Update Password Error: $e");
       return "Failed to update password.";
+    }
+  }
+
+  // 🟢 MERCHANT APP: Update Status & Notify User
+  static Future<String?> updateBookingStatus({
+    required String bookingId,
+    required String customerUserId, // The user_id from the booking row
+    required String newStatus,      // 'confirmed', 'completed', or 'cancelled'
+    required String serviceName,
+  }) async {
+    try {
+      // 1. Update the booking status
+      await Supabase.instance.client.from('bookings').update({
+        'status': newStatus,
+      }).eq('id', bookingId);
+
+      // 2. Draft the notification message based on the status
+      String title = '';
+      String message = '';
+
+      if (newStatus == 'confirmed') {
+        title = 'Booking Confirmed! ✅';
+        message = 'Your appointment for $serviceName has been accepted.';
+      } else if (newStatus == 'cancelled') {
+        title = 'Booking Cancelled ❌';
+        message = 'Unfortunately, your booking for $serviceName was declined.';
+      }
+
+      // 3. Shoot the notification to the Customer!
+      if (title.isNotEmpty) {
+        await Supabase.instance.client.from('notifications').insert({
+          'recipient_id': customerUserId,
+          'title': title,
+          'message': message,
+        });
+      }
+
+      return null; // Success!
+    } catch (e) {
+      debugPrint("Status Update Error: $e");
+      return e.toString();
     }
   }
 }

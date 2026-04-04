@@ -326,11 +326,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 const SizedBox(height: 8),
 
                                 GestureDetector(
-                                  onTap: _forceRefreshLocation,
+                                  onTap: _forceRefreshLocation, // <--- THIS LINE CONNECTS IT!
                                   behavior: HitTestBehavior.opaque,
                                   child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(20)),
+                                      decoration: BoxDecoration(
+                                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(20)
+                                      ),
                                       child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [

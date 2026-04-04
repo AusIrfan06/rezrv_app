@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -190,5 +191,34 @@ class _RezrvAppState extends State<RezrvApp> with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  // 🟢 Add this to your SupabaseService
+  static StreamSubscription<List<Map<String, dynamic>>>? _notificationSubscription;
+
+  static void listenToNotifications() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    // Kills any old streams if the user logs out and logs back in
+    _notificationSubscription?.cancel();
+
+    // 🟢 The Magic Realtime Stream
+    _notificationSubscription = Supabase.instance.client
+        .from('notifications')
+        .stream(primaryKey: ['id'])
+    // 🟢 1. Server-side filter: Only get THIS user's notifications
+        .eq('recipient_id', userId)
+        .listen((List<Map<String, dynamic>> allUserNotifications) {
+
+      // 🟢 2. Local filter: Count only the ones where 'is_read' is false
+      final unreadNotifications = allUserNotifications.where((notification) {
+        return notification['is_read'] == false;
+      }).toList();
+
+      // 🟢 3. Update the UI
+      NotificationData.unreadCount.value = unreadNotifications.length;
+
+    });
   }
 }

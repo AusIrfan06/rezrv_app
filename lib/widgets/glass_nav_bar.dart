@@ -120,9 +120,6 @@ class GlassNavigationBar extends StatelessWidget {
                       // ==========================================
                       // 2. THE FOREGROUND ICONS (Clickable)
                       // ==========================================
-                      // ==========================================
-                      // 2. THE FOREGROUND ICONS (Clickable)
-                      // ==========================================
                       Row(
                         children: List.generate(items.length, (i) {
                           final isSelected = selectedIndex == i;
