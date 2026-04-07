@@ -27,7 +27,7 @@ class GlassNavigationBar extends StatelessWidget {
     // 🟢 2. CALCULATE DYNAMIC PADDING
     // If the phone has a swipe indicator (safeBottom > 0), only add 5px extra.
     // If it's an older phone with standard buttons (safeBottom == 0), keep your 25px.
-    final double adjustedBottomPadding = safeBottom > 0 ? safeBottom + 5 : 25;
+    final double adjustedBottomPadding = safeBottom > 0 ? safeBottom + 0 : 20;
 
     const Duration animDuration = Duration(milliseconds: 450);
     const Curve animCurve = Curves.easeOutQuint;

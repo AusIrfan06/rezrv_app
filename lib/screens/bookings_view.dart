@@ -35,8 +35,9 @@ class BookingsView extends StatefulWidget {
 class _BookingsViewState extends State<BookingsView> {
   List<String> _bookedTimes = [];
 
-  int _selectedDateIndex = 2;
-  int _selectedTimeIndex = 4;
+  int _selectedDateIndex = 0; // Keep this!
+  DateTime _selectedCalendarDate = DateTime.now(); // 🟢 ADD THIS FOR THE CALENDAR
+  int _selectedTimeIndex = -1;
 
   final Set<int> _selectedServices = {0};
   final Set<int> _selectedAddons = {};
@@ -209,8 +210,10 @@ class _BookingsViewState extends State<BookingsView> {
             _selectedDateIndex = d;
             _selectedTimeIndex = t;
             _selectedTime = _times[t];
+            // 🟢 ADD THIS: Sync the calendar to the first available date!
+            _selectedCalendarDate = DateTime.parse(_dates[d]['fullDate']!);
           });
-          return; // Stop searching once we find the first valid slot
+          return;
         }
       }
     }
@@ -862,6 +865,10 @@ class _BookingsViewState extends State<BookingsView> {
   }
 
   Widget _buildStepOneTimeSelection(bool isDark) {
+    final now = DateTime.now();
+    // 🟢 LIMIT TO 3 MONTHS (Exactly 90 days to match your _dates array)
+    final maxDate = now.add(const Duration(days: 89));
+
     return SingleChildScrollView(
       key: const ValueKey(0),
       child: Column(
@@ -869,20 +876,77 @@ class _BookingsViewState extends State<BookingsView> {
         children: [
           Text("Appointment Date", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            // 🟢 Passing the month into the Date Chip now
-            child: Row(children: List.generate(_dates.length, (i) => _buildDateChip(_dates[i]['day']!, _dates[i]['date']!, _dates[i]['month']!, i == _selectedDateIndex, isDark, i))),
+
+          // 🟢 SMALLER CALENDAR FIX
+          _buildGlassBox(
+            isDark: isDark,
+            radius: 20,
+            padding: EdgeInsets.zero, // Removed padding to keep it tight
+            child: SizedBox(
+              height: 290, // 🟢 Forces the glass box to be shorter
+              child: Transform.scale(
+                scale: 0.85, // 🟢 Shrinks the entire calendar down by 15%
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: isDark
+                        ? const ColorScheme.dark(
+                      primary: Colors.blue, // 🟢 The color of the Selected Date Circle
+                      onPrimary: Colors.white, // The text inside the Selected Circle
+                      surface: Colors.transparent, // Keeps the glass effect
+                      onSurface: Colors.white, // Normal calendar numbers
+                    )
+                        : const ColorScheme.light(
+                      primary: Colors.blue,
+                      onPrimary: Colors.white,
+                      surface: Colors.transparent,
+                      onSurface: Colors.black87,
+                    ),
+                    dialogBackgroundColor: Colors.transparent,
+                  ),
+                  child: CalendarDatePicker(
+                    // 🟢 THE FIX: This Key forces Flutter to visibly update the blue circle when tapped!
+                    key: ValueKey(_selectedCalendarDate),
+                    initialDate: _selectedCalendarDate,
+                    firstDate: now,
+                    lastDate: maxDate,
+                    onDateChanged: (DateTime newDate) {
+                      setState(() {
+                        // 1. Update the calendar visual state
+                        _selectedCalendarDate = newDate;
+
+                        // 2. Sync it with your backend array logic
+                        final targetDateString = newDate.toIso8601String().substring(0, 10);
+                        _selectedDateIndex = _dates.indexWhere((d) => d['fullDate']!.substring(0, 10) == targetDateString);
+
+                        if (_selectedDateIndex == -1) _selectedDateIndex = 0; // Fallback
+
+                        // 3. Reset and auto-select the next available time for the new day
+                        _selectedTimeIndex = -1;
+                        _selectedTime = '';
+                        for (int t = 0; t < _times.length; t++) {
+                          if (_isTimeValid(_times[t], _selectedDateIndex)) {
+                            _selectedTimeIndex = t;
+                            _selectedTime = _times[t];
+                            break;
+                          }
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 24),
           Text("Available Time", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
           const SizedBox(height: 12),
+
           Wrap(
             spacing: 8,
             runSpacing: 10,
             children: List.generate(_times.length, (i) {
-              // 🟢 Completely hides the time chip if the time has passed today!
+              // Hide times that have already passed or are booked!
               bool isValid = _isTimeValid(_times[i], _selectedDateIndex);
               if (!isValid) return const SizedBox.shrink();
 
