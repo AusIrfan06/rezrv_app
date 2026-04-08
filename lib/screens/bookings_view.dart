@@ -50,6 +50,7 @@ class _BookingsViewState extends State<BookingsView> {
   int _frontCardIndex = 0;
   int _currentStep = 0;
   bool _isSubmitted = false;
+  late PageController _staffPageController;
 
   // 🟢 We save the ID here so the success screen can use it
   String _generatedBookingId = "";
@@ -172,36 +173,22 @@ class _BookingsViewState extends State<BookingsView> {
   // 🟢 Generates 60 days (~2 months) of valid upcoming dates
   void _generateUpcomingDates() {
     final now = DateTime.now();
-    final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ];
+    final List<String> weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    final List<String> months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     _dates.clear();
-    for (int i = 0; i < 90; i++) {
+    for (int i = 0; i < 90; i++) { // 🟢 Expanded to 90 days for the Calendar
       final date = now.add(Duration(days: i));
       _dates.add({
         "day": weekdays[date.weekday - 1],
         "date": date.day.toString(),
         "month": months[date.month - 1],
-        "fullDate": date.toIso8601String(),
-        // Saves exact date for time validation
+        "year": date.year.toString(),
+        "fullDate": date.toIso8601String(), // 🟢 Required for Calendar Syncing!
       });
     }
   }
 
-  // 🟢 Finds the very first available date and time slot
   void _selectFirstAvailableSlot() {
     for (int d = 0; d < _dates.length; d++) {
       for (int t = 0; t < _times.length; t++) {
@@ -209,9 +196,7 @@ class _BookingsViewState extends State<BookingsView> {
           setState(() {
             _selectedDateIndex = d;
             _selectedTimeIndex = t;
-            _selectedTime = _times[t];
-            // 🟢 ADD THIS: Sync the calendar to the first available date!
-            _selectedCalendarDate = DateTime.parse(_dates[d]['fullDate']!);
+            _selectedCalendarDate = DateTime.parse(_dates[d]['fullDate']!); // 🟢 Syncs calendar UI
           });
           return;
         }
@@ -222,9 +207,19 @@ class _BookingsViewState extends State<BookingsView> {
   @override
   void initState() {
     super.initState();
+    // 🟢 CHANGED TO 0.85 so the left and right cards are clearly visible
+    _staffPageController = PageController(viewportFraction: 0.85, initialPage: 10000);
+
     _generateUpcomingDates();
-    _selectFirstAvailableSlot(); // 🟢 Automatically points to the next valid slot!
+    _selectFirstAvailableSlot();
     _recoverLostDraft();
+  }
+
+  @override
+  void dispose() {
+    // 🟢 DISPOSE IT HERE
+    _staffPageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -301,72 +296,57 @@ class _BookingsViewState extends State<BookingsView> {
                       ),
                       const SizedBox(height: 16),
 
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onVerticalDragEnd: (DragEndDetails details) {
-                          if (isFocused) return;
-                          if (details.primaryVelocity == null) return;
-                          if (details.primaryVelocity! > 300) {
-                            setState(() => _frontCardIndex = (_frontCardIndex + 1) % _staffs.length);
-                          } else if (details.primaryVelocity! < -300) {
-                            setState(() => _frontCardIndex = (_frontCardIndex - 1 + _staffs.length) % _staffs.length);
-                          }
-                        },
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.82,
-                          child: Stack(
-                            alignment: Alignment.topCenter,
-                            children: orderedIndices.map((index) {
-                              int relativePosition = (index - _frontCardIndex + _staffs.length) % _staffs.length;
+                      // 🟢 REPLACED THE ENTIRE GESTURE DETECTOR AND STACK WITH THIS:
+                      // 🟢 THE SMOOTH CAROUSEL ENGINE
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.76, // 🟢 FIXED STRICT HEIGHT
+                        child: PageView.builder(
+                          controller: _staffPageController,
+                          // Locks swipe when checking out
+                          physics: _currentStep > 0 ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
+                          onPageChanged: (pageIndex) {
+                            setState(() => _frontCardIndex = pageIndex % _staffs.length);
+                          },
+                          itemBuilder: (context, index) {
+                            return AnimatedBuilder(
+                              animation: _staffPageController,
+                              builder: (context, child) {
+                                // 1. Calculate how far this specific card is from the center
+                                double pageOffset = 0;
+                                if (_staffPageController.position.haveDimensions) {
+                                  pageOffset = _staffPageController.page! - index;
+                                } else {
+                                  pageOffset = (10000 - index).toDouble(); // Initial load fallback
+                                }
 
-                              double top; double scale; double opacity;
+                                // 2. Smoothly shrink the side cards
+                                double scale = 1 - (pageOffset.abs() * 0.12);
+                                scale = scale.clamp(0.85, 1.0);
 
-                              if (relativePosition == 0) {
-                                top = isFocused ? 10 : 100;
-                                scale = 1.0; opacity = 1.0;
-                              } else if (relativePosition == 1) {
-                                top = isFocused ? 10 : 45;
-                                scale = isFocused ? 0.8 : 0.9;
-                                opacity = isFocused ? 0.0 : 0.9;
-                              } else if (relativePosition == 2) {
-                                top = isFocused ? 10 : 5;
-                                scale = 0.8;
-                                opacity = isFocused ? 0.0 : 0.6;
-                              } else {
-                                top = 5; scale = 0.8; opacity = 0.0;
-                              }
+                                // 3. Smoothly fade the side cards
+                                double opacity = 1 - (pageOffset.abs() * 0.6);
+                                opacity = opacity.clamp(0.4, 1.0);
 
-                              return AnimatedPositioned(
-                                key: ValueKey(index),
-                                duration: const Duration(milliseconds: 600),
-                                curve: Curves.easeOutQuint,
-                                top: top,
-                                left: 0,
-                                right: 0,
-                                child: AnimatedScale(
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: Curves.easeOutQuint,
-                                  scale: scale,
+                                int realIndex = index % _staffs.length;
+                                bool isActiveCard = pageOffset.abs() < 0.5; // True if it is the center card
+
+                                return Align(
                                   alignment: Alignment.topCenter,
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 400),
-                                    opacity: opacity,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        if (relativePosition != 0 && !isFocused) {
-                                          setState(() => _frontCardIndex = index);
-                                        }
-                                      },
-                                      child: AbsorbPointer(
-                                        absorbing: relativePosition != 0,
-                                        child: _buildExpandedGlassCard(_staffs[index], isDark, isFocused),
+                                  child: Transform.scale(
+                                    scale: scale,
+                                    child: Opacity(
+                                      opacity: opacity,
+                                      child: _buildExpandedGlassCard(
+                                          _staffs[realIndex],
+                                          isDark,
+                                          isActiveCard
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -407,7 +387,8 @@ class _BookingsViewState extends State<BookingsView> {
     return _AnimatedPressable(onTap: () {}, child: _buildGlassBox(isDark: isDark, radius: 100, height: 44, padding: const EdgeInsets.symmetric(horizontal: 16), child: Center(child: Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)))));
   }
 
-  Widget _buildExpandedGlassCard(Map<String, String> staff, bool isDark, bool isFocused) {
+  // 🟢 Changed 'isFocused' to 'isActiveCard'
+  Widget _buildExpandedGlassCard(Map<String, String> staff, bool isDark, bool isActiveCard) {
     Widget contentSwitcher = AnimatedSwitcher(
       duration: const Duration(milliseconds: 600),
       switchInCurve: Curves.easeOutBack,
@@ -418,17 +399,22 @@ class _BookingsViewState extends State<BookingsView> {
           children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
         );
       },
-      child: _isSubmitted ? _buildSuccessState(isDark) : _buildBookingFlow(isDark, staff, isFocused),
+      child: _isSubmitted ? _buildSuccessState(isDark) : _buildBookingFlow(isDark, staff, isActiveCard),
     );
 
     return _buildGlassBox(
       isDark: isDark,
       radius: 28,
       padding: const EdgeInsets.all(20),
-      height: isFocused ? MediaQuery.of(context).size.height * 0.72 : null,
+
+      // 🟢 THE FIX: Force the card to fill the parent container completely!
+      // This ensures Step 1 is exactly the same height as Steps 2 and 3.
+      height: double.infinity,
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: isFocused ? MainAxisSize.max : MainAxisSize.min,
+        // 🟢 ALWAYS stretch to max size
+        mainAxisSize: MainAxisSize.max,
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
@@ -463,7 +449,9 @@ class _BookingsViewState extends State<BookingsView> {
             )
                 : const SizedBox.shrink(),
           ),
-          isFocused ? Expanded(child: contentSwitcher) : contentSwitcher,
+
+          // 🟢 ALWAYS wrap in Expanded so it fills the bottom of the card perfectly
+          Expanded(child: contentSwitcher),
         ],
       ),
     );
@@ -865,96 +853,173 @@ class _BookingsViewState extends State<BookingsView> {
   }
 
   Widget _buildStepOneTimeSelection(bool isDark) {
-    final now = DateTime.now();
-    // 🟢 LIMIT TO 3 MONTHS (Exactly 90 days to match your _dates array)
-    final maxDate = now.add(const Duration(days: 89));
+    final l10n = AppLocalizations.of(context)!;
 
-    return SingleChildScrollView(
+    return Column(
       key: const ValueKey(0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Appointment Date", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
-          const SizedBox(height: 12),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 🟢 HEADER WITH CURRENT MONTH
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(l10n.bkApptDate, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+            Text(
+                "${_dates[_selectedDateIndex]['month']} ${_dates[_selectedDateIndex]['year']}",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
 
-          // 🟢 SMALLER CALENDAR FIX
-          _buildGlassBox(
-            isDark: isDark,
-            radius: 20,
-            padding: EdgeInsets.zero, // Removed padding to keep it tight
-            child: SizedBox(
-              height: 290, // 🟢 Forces the glass box to be shorter
-              child: Transform.scale(
-                scale: 0.85, // 🟢 Shrinks the entire calendar down by 15%
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: isDark
-                        ? const ColorScheme.dark(
-                      primary: Colors.blue, // 🟢 The color of the Selected Date Circle
-                      onPrimary: Colors.white, // The text inside the Selected Circle
-                      surface: Colors.transparent, // Keeps the glass effect
-                      onSurface: Colors.white, // Normal calendar numbers
-                    )
-                        : const ColorScheme.light(
-                      primary: Colors.blue,
-                      onPrimary: Colors.white,
-                      surface: Colors.transparent,
-                      onSurface: Colors.black87,
-                    ),
-                    dialogBackgroundColor: Colors.transparent,
-                  ),
-                  child: CalendarDatePicker(
-                    // 🟢 THE FIX: This Key forces Flutter to visibly update the blue circle when tapped!
-                    key: ValueKey(_selectedCalendarDate),
-                    initialDate: _selectedCalendarDate,
-                    firstDate: now,
-                    lastDate: maxDate,
-                    onDateChanged: (DateTime newDate) {
-                      setState(() {
-                        // 1. Update the calendar visual state
-                        _selectedCalendarDate = newDate;
+        // 🟢 MODERN HORIZONTAL DATE SCROLLER
+        SizedBox(
+          height: 95,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none,
+            itemCount: _dates.length,
+            itemBuilder: (context, index) {
+              bool isSelected = index == _selectedDateIndex;
+              String day = _dates[index]['day']!.substring(0, 3); // "Mon"
+              String date = _dates[index]['date']!; // "14"
 
-                        // 2. Sync it with your backend array logic
-                        final targetDateString = newDate.toIso8601String().substring(0, 10);
-                        _selectedDateIndex = _dates.indexWhere((d) => d['fullDate']!.substring(0, 10) == targetDateString);
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedDateIndex = index;
+                    _selectedCalendarDate = DateTime.parse(_dates[index]['fullDate']!);
 
-                        if (_selectedDateIndex == -1) _selectedDateIndex = 0; // Fallback
-
-                        // 3. Reset and auto-select the next available time for the new day
-                        _selectedTimeIndex = -1;
-                        _selectedTime = '';
-                        for (int t = 0; t < _times.length; t++) {
-                          if (_isTimeValid(_times[t], _selectedDateIndex)) {
-                            _selectedTimeIndex = t;
-                            _selectedTime = _times[t];
-                            break;
-                          }
+                    // Auto-select valid time for the new day
+                    if (_selectedTimeIndex == -1 || !_isTimeValid(_times[_selectedTimeIndex], index)) {
+                      _selectedTimeIndex = -1;
+                      _selectedTime = '';
+                      for (int t = 0; t < _times.length; t++) {
+                        if (_isTimeValid(_times[t], index)) {
+                          _selectedTimeIndex = t;
+                          _selectedTime = _times[t];
+                          break;
                         }
-                      });
-                    },
+                      }
+                    }
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(right: 12),
+                  width: 70, // Fixed width for perfect squares
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03)),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isSelected ? Colors.blueAccent : Colors.transparent, width: 2),
+                    boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] : [],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(day, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isSelected ? Colors.white.withOpacity(0.9) : (isDark ? Colors.white54 : Colors.black54))),
+                      const SizedBox(height: 4),
+                      Text(date, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black87))),
+                    ],
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
+        ),
 
-          const SizedBox(height: 24),
-          Text("Available Time", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
-          const SizedBox(height: 12),
+        const SizedBox(height: 28),
+        Text(l10n.bkAvailTime, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+        const SizedBox(height: 12),
 
-          Wrap(
-            spacing: 8,
-            runSpacing: 10,
+        // 🟢 HORIZONTAL TIME SCROLL
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          clipBehavior: Clip.none,
+          child: Row(
             children: List.generate(_times.length, (i) {
-              // Hide times that have already passed or are booked!
               bool isValid = _isTimeValid(_times[i], _selectedDateIndex);
-              if (!isValid) return const SizedBox.shrink();
 
-              return _buildTimeChip(_times[i], i == _selectedTimeIndex, isDark, i);
+              if (!isValid) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                    ),
+                    child: Center(
+                        child: Text(_times[i], style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white24 : Colors.black26))
+                    ),
+                  ),
+                );
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildScrollTimeChip(_times[i], i == _selectedTimeIndex, isDark, i),
+              );
             }),
           ),
-          const SizedBox(height: 10),
-        ],
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
+  // 🟢 REDESIGNED WIDE TIME CHIP
+  Widget _buildTimeChip(String time, bool isSelected, bool isDark, int index) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTimeIndex = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), // Gives the pill shape
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
+        ),
+        child: Text(time, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87))),
+      ),
+    );
+  }
+
+  // 🟢 NEW HELPER: Designed for the Horizontal Scroll layout
+  Widget _buildScrollTimeChip(String time, bool isSelected, bool isDark, int index) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTimeIndex = index;
+          _selectedTime = time;
+          _shopName = widget.shopName;
+        });
+        _saveDraftToPreventLoss(_shopName, _selectedTime);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        // 🟢 Padding gives the chip its shape in a Row!
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
+        ),
+        child: Center(
+          child: Text(
+              time,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87)
+              )
+          ),
+        ),
       ),
     );
   }
@@ -1449,30 +1514,6 @@ class _BookingsViewState extends State<BookingsView> {
             Text(day, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? Colors.white70 : (isDark ? Colors.white54 : Colors.black87))),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTimeChip(String time, bool isSelected, bool isDark, int index) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTimeIndex = index;
-          _selectedTime = time;
-          _shopName = widget.shopName;
-        });
-        _saveDraftToPreventLoss(_shopName, _selectedTime);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
-        ),
-        child: Text(time, style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87))),
       ),
     );
   }
