@@ -30,18 +30,22 @@ class RezrvData {
     upcomingReservations.value = [...upcomingReservations.value, newReservation];
   }
 
-  static void cancelReservation(String id) {
-    final upcoming = List<Map<String, dynamic>>.from(upcomingReservations.value);
-    final history = List<Map<String, dynamic>>.from(historyReservations.value);
+  static void cancelReservation(String bookingId) {
+    // 1. Find the booking in the upcoming list
+    final int itemIndex = upcomingReservations.value.indexWhere((item) => item['id'] == bookingId);
 
-    final index = upcoming.indexWhere((item) => item["id"] == id);
-    if (index != -1) {
-      final item = upcoming.removeAt(index);
-      item["status"] = "cancelled";
-      history.insert(0, item);
+    if (itemIndex != -1) {
+      // 2. Make a copy of the item so we can edit it
+      final Map<String, dynamic> cancelledItem = Map<String, dynamic>.from(upcomingReservations.value[itemIndex]);
 
-      upcomingReservations.value = upcoming;
-      historyReservations.value = history;
+      // 3. Remove it from the Upcoming list
+      final updatedUpcoming = List<Map<String, dynamic>>.from(upcomingReservations.value)..removeAt(itemIndex);
+      upcomingReservations.value = updatedUpcoming;
+
+      // 4. Mark its status as 'cancelled' and insert it at the top of the History list!
+      cancelledItem['status'] = 'cancelled';
+      final updatedHistory = List<Map<String, dynamic>>.from(historyReservations.value)..insert(0, cancelledItem);
+      historyReservations.value = updatedHistory;
     }
   }
 }

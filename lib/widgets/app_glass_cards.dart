@@ -69,12 +69,12 @@ class PrimaryGlassContainer extends StatelessWidget {
           // If no color is passed, it remains 100% crystal clear
           color: backgroundColor,
           border: Border.all(
-            color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+            color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -119,15 +119,15 @@ class InnerGlassCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
           // Default sheer tint so it visibly pops out from a clear parent sheet
-          color: overrideColor ?? (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.2)),
+          color: overrideColor ?? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.2)),
           border: Border.all(
-            color: overrideBorderColor ?? Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+            color: overrideBorderColor ?? Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
             width: 1.0,
           ),
           // Softer, tighter shadow for nested elements
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.1 : 0.02),
+              color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.02),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

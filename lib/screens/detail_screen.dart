@@ -85,7 +85,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(32),
                         ),
                         child: Column(
@@ -166,9 +166,9 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
               child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.2))
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2))
                   ),
                   child: HugeIcon(icon: icon, color: Colors.blue, size: 24)
               )

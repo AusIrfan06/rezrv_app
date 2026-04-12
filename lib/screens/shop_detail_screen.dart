@@ -41,7 +41,7 @@ class ShopDetailScreen extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(0.4),
+                        Colors.black.withValues(alpha: 0.4),
                         Colors.transparent,
                         isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
                       ],
@@ -171,7 +171,7 @@ class ShopDetailScreen extends StatelessWidget {
                   end: Alignment.topCenter,
                   colors: [
                     isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
-                    (isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1)).withOpacity(0.0),
+                    (isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1)).withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -213,7 +213,7 @@ class ShopDetailScreen extends StatelessWidget {
                     color: Colors.blue,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8)),
+                      BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
                     ],
                   ),
                   child: const Center(
@@ -240,8 +240,8 @@ class ShopDetailScreen extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
-              border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.5), width: 1.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
+              border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.5), width: 1.5),
             ),
             child: Icon(icon, color: isDark ? Colors.white : Colors.black87, size: 20),
           ),
@@ -258,10 +258,10 @@ class ShopDetailScreen extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.5),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))],
+            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))],
           ),
           child: child,
         ),

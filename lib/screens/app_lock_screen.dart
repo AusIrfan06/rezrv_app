@@ -87,7 +87,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.blueAccent.withOpacity(isDark ? 0.05 : 0.1),
+                color: Colors.blueAccent.withValues(alpha: isDark ? 0.05 : 0.1),
               ),
             ),
           ),
@@ -106,12 +106,12 @@ class _AppLockScreenState extends State<AppLockScreen> {
                   padding: const EdgeInsets.symmetric(
                       vertical: 40, horizontal: 24),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors
-                        .white.withOpacity(0.4),
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors
+                        .white.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                      color: isDark ? Colors.white.withOpacity(0.1) : Colors
-                          .white.withOpacity(0.2),
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors
+                          .white.withValues(alpha: 0.2),
                       width: 1.5,
                     ),
                   ),
@@ -122,7 +122,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent.withOpacity(0.1),
+                          color: Colors.blueAccent.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const HugeIcon(
@@ -160,7 +160,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                         child: TextButton.icon(
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.blueAccent.withOpacity(
+                              backgroundColor: Colors.blueAccent.withValues(alpha: 
                                   0.1),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16)),

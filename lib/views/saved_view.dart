@@ -99,7 +99,7 @@ class SavedView extends StatelessWidget {
                         gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.black.withOpacity(0.7)]
+                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)]
                         )
                     )
                 ),
@@ -117,7 +117,7 @@ class SavedView extends StatelessWidget {
                       behavior: HitTestBehavior.opaque,
                       child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
                           child: const Icon(Icons.favorite, color: Colors.redAccent, size: 18)
                       ),
                     )

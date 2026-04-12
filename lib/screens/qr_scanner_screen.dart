@@ -62,7 +62,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         // 1. THE DARK "PUNCH-HOLE" LAYER
         ColorFiltered(
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.5),
+            Colors.black.withValues(alpha: 0.5),
             BlendMode.srcOut,
           ),
           child: Stack(
@@ -94,11 +94,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             width: 250,
             height: 250,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.5), width: 2),
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.blue.withValues(alpha: 0.2),
                   blurRadius: 20,
                   spreadRadius: 2,
                 )
@@ -157,16 +157,16 @@ class _ScanningLineState extends State<_ScanningLine> with SingleTickerProviderS
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.5),
+                    color: Colors.blue.withValues(alpha: 0.5),
                     blurRadius: 10,
                     spreadRadius: 2,
                   )
                 ],
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.withOpacity(0),
+                    Colors.blue.withValues(alpha: 0),
                     Colors.blue,
-                    Colors.blue.withOpacity(0),
+                    Colors.blue.withValues(alpha: 0),
                   ],
                 ),
               ),

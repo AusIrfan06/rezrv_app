@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🟢 1. ADDED SECURE STORAGE
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/notification_data.dart';
 import '../main.dart';
 import '../screens/booking_ticket_screen.dart';
@@ -69,6 +69,7 @@ class LocalNotificationService {
     final data = jsonDecode(payload);
 
     final ticketScreen = BookingTicketScreen(
+      shopId: '',
       shopName: data['shopName'],
       category: data['category'],
       shopImage: data['shopImage'],

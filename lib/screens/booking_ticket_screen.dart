@@ -4,8 +4,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:rezrv/l10n/generated/app_localizations.dart';
+import 'bookings_view.dart';
 
 class BookingTicketScreen extends StatefulWidget {
+  final String shopId; // 🟢 Add this
   final String shopName;
   final String category;
   final String shopImage;
@@ -17,6 +19,7 @@ class BookingTicketScreen extends StatefulWidget {
 
   const BookingTicketScreen({
     super.key,
+    required this.shopId, // 🟢 Add this
     required this.shopName,
     required this.category,
     required this.shopImage,
@@ -179,11 +182,11 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                         color: _isPast
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.blue.withOpacity(0.15),
+                            ? Colors.green.withValues(alpha: 0.15)
+                            : Colors.blue.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: _isPast ? Colors.green.withOpacity(0.5) : Colors.blue.withOpacity(0.5)
+                            color: _isPast ? Colors.green.withValues(alpha: 0.5) : Colors.blue.withValues(alpha: 0.5)
                         )
                     ),
                     child: Row(
@@ -213,14 +216,14 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                     ),
                   ),
 
-                  // 🟢 REARRANGED TICKET CARD
+                  // 🟢 REARRANGED CLEAN TICKET CARD
                   Container(
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E242B) : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         )
@@ -230,7 +233,7 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                       children: [
                         // Top Section: Shop Info
                         Padding(
-                          padding: const EdgeInsets.all(16), // 🟢 Tighter padding
+                          padding: const EdgeInsets.all(20),
                           child: Row(
                             children: [
                               ClipRRect(
@@ -271,59 +274,16 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                           ),
                         ),
 
-                        // Dashed Divider
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Container(
-                                height: 20, width: 10,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
-                                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(20)),
-                                ),
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      return Flex(
-                                        direction: Axis.horizontal,
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: List.generate(
-                                          (constraints.constrainWidth() / 8).floor(),
-                                              (index) => SizedBox(
-                                            width: 4, height: 1.5,
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.5)),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                height: 20, width: 10,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
-                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Dashed Divider 1
+                        _buildDashedDivider(isDark),
 
                         // Middle Section: Booking Details
                         Padding(
-                          padding: const EdgeInsets.all(16), // 🟢 Tighter padding
+                          padding: const EdgeInsets.all(20),
                           child: Column(
                             children: [
                               _buildDetailRow(l10n.ticketProvider, widget.providerName, isDark),
-                              const SizedBox(height: 12), // 🟢 Reduced spacing
+                              const SizedBox(height: 12),
                               _buildDetailRow(l10n.ticketDate, widget.date, isDark),
                               const SizedBox(height: 12),
                               _buildDetailRow(l10n.ticketTime, widget.time, isDark),
@@ -335,40 +295,34 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                           ),
                         ),
 
-                        // Bottom Section: QR Code
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.blue.withOpacity(0.05),
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: QrImageView(
-                                  data: qrData,
-                                  version: QrVersions.auto,
-                                  size: 130.0, // 🟢 Reduced QR code size
-                                  backgroundColor: Colors.white,
-                                ),
+                        // Dashed Divider 2
+                        _buildDashedDivider(isDark),
+
+                        // Bottom Section: CLEAN QR Code (No text, no heavy shadows)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white, // Always white so scanners can read it!
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: QrImageView(
+                              data: widget.bookingId,
+                              version: QrVersions.auto,
+                              size: 160.0,
+                              backgroundColor: Colors.white,
+                              eyeStyle: const QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: Colors.black87,
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                l10n.ticketScanHint,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? Colors.white60 : Colors.black54,
-                                ),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: Colors.black87,
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        )
                       ],
                     ),
                   ),
@@ -377,10 +331,9 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
             ),
           ),
 
-          // --- STICKY BOTTOM ACTIONS ---
-          // 🟢 This container sits outside the ScrollView so it's always visible at the bottom
+          // --- STICKY BOTTOM ACTIONS (1:1:2 Layout) ---
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24), // Added extra bottom padding for safe area
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
                 boxShadow: [
@@ -395,8 +348,10 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
               top: false,
               child: Row(
                 children: [
+                  // 🟢 1 Flex: Call Button (Icon Only)
                   Expanded(
-                    child: ElevatedButton.icon(
+                    flex: 1,
+                    child: ElevatedButton(
                       onPressed: _contactOwner,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
@@ -408,14 +363,49 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                           side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade300),
                         ),
                       ),
-                      icon: const Icon(Icons.phone_outlined, size: 20),
-                      label: Text(l10n.ticketCallOwner, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: const Icon(Icons.phone_outlined, size: 22),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
+
+                  // 🟢 1 Flex: Directions Button (Icon Only)
                   Expanded(
-                    child: ElevatedButton.icon(
+                    flex: 1,
+                    child: ElevatedButton(
                       onPressed: () {}, // Add map logic
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
+                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade300),
+                        ),
+                      ),
+                      child: const Icon(Icons.directions_rounded, size: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // 🟢 2 Flex: Rezrv Again Button
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Push them right back into the checkout flow for this shop!
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookingsView(
+                              shopId: widget.shopId,
+                              shopName: widget.shopName,
+                              category: widget.category,
+                              shopImage: widget.shopImage,
+                            ),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
@@ -425,8 +415,7 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      icon: const Icon(Icons.directions_rounded, size: 20),
-                      label: Text(l10n.directions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: const Text("Rezrv Again", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -454,6 +443,53 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDashedDivider(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Container(
+            height: 20, width: 10,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(20)),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Flex(
+                    direction: Axis.horizontal,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: List.generate(
+                      (constraints.constrainWidth() / 8).floor(),
+                          (index) => SizedBox(
+                        width: 4, height: 1.5,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          Container(
+            height: 20, width: 10,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

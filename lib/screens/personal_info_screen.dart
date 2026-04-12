@@ -119,7 +119,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 width: 350, height: 350,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blueAccent.withOpacity(isDark ? 0.08 : 0.15),
+                  color: Colors.blueAccent.withValues(alpha: isDark ? 0.08 : 0.15),
                 ),
               ),
             ),
@@ -129,7 +129,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 width: 300, height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.purpleAccent.withOpacity(isDark ? 0.06 : 0.12),
+                  color: Colors.purpleAccent.withValues(alpha: isDark ? 0.06 : 0.12),
                 ),
               ),
             ),
@@ -153,8 +153,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4),
-                              border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.5), width: 1.5)
+                              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4),
+                              border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.5), width: 1.5)
                           ),
                           child: CircleAvatar(
                             radius: 50,
@@ -229,7 +229,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
-                              BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))
+                              BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))
                             ]
                         ),
                         child: const Center(
@@ -292,13 +292,13 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(isFocused ? 0.08 : 0.03)
-                        : Colors.white.withOpacity(isFocused ? 0.7 : 0.4),
+                        ? Colors.white.withValues(alpha: isFocused ? 0.08 : 0.03)
+                        : Colors.white.withValues(alpha: isFocused ? 0.7 : 0.4),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isFocused
                           ? Colors.blueAccent
-                          : Colors.white.withOpacity(isDark ? 0.1 : 0.6),
+                          : Colors.white.withValues(alpha: isDark ? 0.1 : 0.6),
                       width: isFocused ? 1.5 : 1.0,
                     ),
                   ),

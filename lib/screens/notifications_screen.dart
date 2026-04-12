@@ -46,8 +46,8 @@ class NotificationsScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          Positioned(top: -50, right: -100, child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.08 : 0.15)))),
-          Positioned(bottom: 100, left: -100, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.06 : 0.12)))),
+          Positioned(top: -50, right: -100, child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withValues(alpha: isDark ? 0.08 : 0.15)))),
+          Positioned(bottom: 100, left: -100, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withValues(alpha: isDark ? 0.06 : 0.12)))),
 
           SafeArea(
             child: ValueListenableBuilder<List<Map<String, dynamic>>>(
@@ -81,17 +81,17 @@ class NotificationsScreen extends StatelessWidget {
       case "booking":
         iconData = HugeIcons.strokeRoundedCalendar01;
         iconColor = Colors.green;
-        iconBgColor = Colors.green.withOpacity(0.15);
+        iconBgColor = Colors.green.withValues(alpha: 0.15);
         break;
       case "promo":
         iconData = HugeIcons.strokeRoundedTag01;
         iconColor = Colors.orangeAccent;
-        iconBgColor = Colors.orangeAccent.withOpacity(0.15);
+        iconBgColor = Colors.orangeAccent.withValues(alpha: 0.15);
         break;
       default:
         iconData = HugeIcons.strokeRoundedShield01;
         iconColor = Colors.blueAccent;
-        iconBgColor = Colors.blueAccent.withOpacity(0.15);
+        iconBgColor = Colors.blueAccent.withValues(alpha: 0.15);
     }
 
     return Padding(
@@ -103,7 +103,7 @@ class NotificationsScreen extends StatelessWidget {
         background: Container(
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 24),
-          decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.8), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(20)),
           child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.white, size: 24),
         ),
         child: GlassContainer(
@@ -111,10 +111,10 @@ class NotificationsScreen extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(isUnread ? 0.08 : 0.03) : Colors.white.withOpacity(isUnread ? 0.7 : 0.4),
+              color: isDark ? Colors.white.withValues(alpha: isUnread ? 0.08 : 0.03) : Colors.white.withValues(alpha: isUnread ? 0.7 : 0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isUnread ? Colors.blueAccent.withOpacity(isDark ? 0.5 : 0.8) : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: isUnread ? 1.5 : 1.0),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.1 : 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+              border: Border.all(color: isUnread ? Colors.blueAccent.withValues(alpha: isDark ? 0.5 : 0.8) : Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: isUnread ? 1.5 : 1.0),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.05), blurRadius: 10, offset: const Offset(0, 4))],
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +159,7 @@ class NotificationsScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), shape: BoxShape.circle),
             child: HugeIcon(icon: HugeIcons.strokeRoundedNotificationOff01, color: isDark ? Colors.white30 : Colors.black26, size: 60),
           ),
           const SizedBox(height: 24),

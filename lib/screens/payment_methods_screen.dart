@@ -50,8 +50,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               colors: [Color(0xFFE5C058), Color(0xFFFDEB82), Color(0xFFE5C058)],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
-            border: Border.all(color: Colors.black.withOpacity(0.4), width: 0.5),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 2, offset: const Offset(1, 1))],
+            border: Border.all(color: Colors.black.withValues(alpha: 0.4), width: 0.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 2, offset: const Offset(1, 1))],
           ),
           child: Stack(
             alignment: Alignment.center, // 🟢 GUARANTEES IT IS PERFECTLY CENTERED
@@ -60,16 +60,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Container(height: 0.5, color: Colors.black.withOpacity(0.3)),
-                  Container(height: 0.5, color: Colors.black.withOpacity(0.3)),
+                  Container(height: 0.5, color: Colors.black.withValues(alpha: 0.3)),
+                  Container(height: 0.5, color: Colors.black.withValues(alpha: 0.3)),
                 ],
               ),
               // Vertical contact lines
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Container(width: 0.5, color: Colors.black.withOpacity(0.3)),
-                  Container(width: 0.5, color: Colors.black.withOpacity(0.3)),
+                  Container(width: 0.5, color: Colors.black.withValues(alpha: 0.3)),
+                  Container(width: 0.5, color: Colors.black.withValues(alpha: 0.3)),
                 ],
               ),
               // Center plate (hides the crossing lines inside)
@@ -77,7 +77,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 width: 14, height: 10,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
-                  border: Border.all(color: Colors.black.withOpacity(0.4), width: 0.5),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.4), width: 0.5),
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFDEB82), Color(0xFFE5C058)],
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
@@ -100,7 +100,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         child: Stack(
           children: [
             Positioned(left: 0, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFEB001B), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)]))),
-            Positioned(right: 0, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFF79E1B).withOpacity(0.9), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)]))),
+            Positioned(right: 0, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFF79E1B).withValues(alpha: 0.9), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)]))),
           ],
         ),
       );
@@ -130,7 +130,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
     return Container(
       width: size, height: size,
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))]),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))]),
       child: Center(child: Text(initials, style: TextStyle(color: textColor, fontSize: size * 0.35, fontWeight: FontWeight.bold, letterSpacing: -0.5))),
     );
   }
@@ -149,7 +149,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   void _showPaymentTypeSelector(BuildContext context, bool isDark) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (dialogContext) => BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -159,10 +159,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4), width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))],
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10))],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -181,7 +181,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                     ),
                     onPressed: () => Navigator.pop(dialogContext),
                     child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
@@ -201,10 +201,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.3), width: 1.5)),
+        decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5)),
         child: Row(
           children: [
-            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle), child: HugeIcon(icon: icon, color: color, size: 22)),
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle), child: HugeIcon(icon: icon, color: color, size: 22)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)), const SizedBox(height: 2), Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.black54))])),
             Icon(Icons.arrow_forward_ios_rounded, color: isDark ? Colors.white30 : Colors.black26, size: 14)
@@ -234,8 +234,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E242B).withOpacity(0.8) : Colors.white.withOpacity(0.8),
-                  border: Border(top: BorderSide(color: Colors.white.withOpacity(isDark ? 0.1 : 0.4), width: 1.5)),
+                  color: isDark ? const Color(0xFF1E242B).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.4), width: 1.5)),
                 ),
                 child: SingleChildScrollView(
                   child: Form(
@@ -244,7 +244,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
+                        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)))),
                         const SizedBox(height: 16),
                         Text("Add Credit/Debit Card", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
@@ -297,7 +297,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                               Navigator.pop(context);
                             }
                           },
-                          child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Save Card", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
+                          child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Save Card", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -334,8 +334,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E242B).withOpacity(0.8) : Colors.white.withOpacity(0.8),
-                        border: Border(top: BorderSide(color: Colors.white.withOpacity(isDark ? 0.1 : 0.4), width: 1.5)),
+                        color: isDark ? const Color(0xFF1E242B).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+                        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.4), width: 1.5)),
                       ),
                       child: SingleChildScrollView(
                         child: Form(
@@ -344,7 +344,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
+                              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)))),
                               const SizedBox(height: 16),
                               Text("Link Bank Account", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
@@ -356,7 +356,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                   const SizedBox(height: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(14)),
+                                    decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(14)),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: selectedBank,
@@ -402,7 +402,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                     Navigator.pop(context);
                                   }
                                 },
-                                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Link Account", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
+                                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.green.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Link Account", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
                               ),
                               const SizedBox(height: 12),
                             ],
@@ -427,7 +427,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(14)),
           child: TextFormField(
             controller: controller,
             keyboardType: keyboardType,
@@ -473,8 +473,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       ),
       body: Stack(
         children: [
-          Positioned(top: -50, right: -100, child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.08 : 0.15)))),
-          Positioned(bottom: 100, left: -100, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.06 : 0.12)))),
+          Positioned(top: -50, right: -100, child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withValues(alpha: isDark ? 0.08 : 0.15)))),
+          Positioned(bottom: 100, left: -100, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withValues(alpha: isDark ? 0.06 : 0.12)))),
 
           ValueListenableBuilder<List<Map<String, dynamic>>>(
             valueListenable: UserData.savedPaymentMethods,
@@ -542,11 +542,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       onTap: onTap,
       child: Container(
         height: height, width: double.infinity,
-        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1), width: 1.5)),
+        decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1), width: 1.5)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)), child: HugeIcon(icon: HugeIcons.strokeRoundedCreditCard, color: isDark ? Colors.white54 : Colors.black54, size: 28)),
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)), child: HugeIcon(icon: HugeIcons.strokeRoundedCreditCard, color: isDark ? Colors.white54 : Colors.black54, size: 28)),
             const SizedBox(height: 12),
             Text("Add a Card", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
@@ -560,11 +560,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       onTap: onTap,
       child: Container(
         height: height, width: double.infinity,
-        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1), width: 1.5)),
+        decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1), width: 1.5)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)), child: HugeIcon(icon: HugeIcons.strokeRoundedBank, color: isDark ? Colors.white54 : Colors.black54, size: 28)),
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)), child: HugeIcon(icon: HugeIcons.strokeRoundedBank, color: isDark ? Colors.white54 : Colors.black54, size: 28)),
             const SizedBox(height: 12),
             Text("Link Bank Account", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
@@ -641,10 +641,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           decoration: BoxDecoration(
                               gradient: LinearGradient(colors: cardColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.0),
                               boxShadow: relativePosition == 0 ? [
-                                BoxShadow(color: cardColors[0].withOpacity(0.4), offset: const Offset(0, 8), blurRadius: 16, spreadRadius: -2),
-                                BoxShadow(color: Colors.black.withOpacity(0.15), offset: const Offset(0, 4), blurRadius: 8, spreadRadius: 0),
+                                BoxShadow(color: cardColors[0].withValues(alpha: 0.4), offset: const Offset(0, 8), blurRadius: 16, spreadRadius: -2),
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.15), offset: const Offset(0, 4), blurRadius: 8, spreadRadius: 0),
                               ] : []
                           ),
                           child: Stack(
@@ -654,7 +654,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(16),
                                       gradient: LinearGradient(
-                                        colors: [Colors.white.withOpacity(0.15), Colors.transparent],
+                                        colors: [Colors.white.withValues(alpha: 0.15), Colors.transparent],
                                         begin: Alignment.topLeft, end: Alignment.bottomRight,
                                       )
                                   )
@@ -662,7 +662,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                               // 💎 2. The Subtle Globe Watermark
                               Positioned(
                                 right: -20, bottom: -20,
-                                child: Icon(Icons.public, size: 160, color: Colors.white.withOpacity(0.04)),
+                                child: Icon(Icons.public, size: 160, color: Colors.white.withValues(alpha: 0.04)),
                               ),
 
                               // 💎 3. The Card Content
@@ -680,14 +680,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text("PLATINUM", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 2.0)),
+                                            Text("PLATINUM", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 2.0)),
                                             if (method["isPrimary"] == true)
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // 🟢 Minimized padding
                                                 decoration: BoxDecoration(
-                                                    color: Colors.black.withOpacity(0.3), // 🟢 Restored black background
+                                                    color: Colors.black.withValues(alpha: 0.3), // 🟢 Restored black background
                                                     borderRadius: BorderRadius.circular(4),
-                                                    border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5)
+                                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 0.5)
                                                 ),
                                                 child: const Text("PRIMARY", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)), // 🟢 Minimized text
                                               )
@@ -779,7 +779,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 Expanded(
                   child: _AnimatedPressable(
                     onTap: () => UserData.setPrimaryPaymentMethod(currentMethod["id"]),
-                    child: Container(decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), border: Border.all(color: Colors.blue.withOpacity(0.5)), borderRadius: BorderRadius.circular(14)), child: const Center(child: Text("Set as Primary", maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)))),
+                    child: Container(decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), border: Border.all(color: Colors.blue.withValues(alpha: 0.5)), borderRadius: BorderRadius.circular(14)), child: const Center(child: Text("Set as Primary", maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)))),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -790,7 +790,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     if (_frontCardIndex > 0) _frontCardIndex--;
                     UserData.removePaymentMethod(currentMethod["id"]);
                   },
-                  child: Container(decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(14)), child: const Center(child: Text("Remove", maxLines: 1, style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)))),
+                  child: Container(decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)), child: const Center(child: Text("Remove", maxLines: 1, style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)))),
                 ),
               ),
             ],
@@ -804,13 +804,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white12 : Colors.black.withOpacity(0.05), width: 1.0)),
+      decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05), width: 1.0)),
       child: Row(
         children: [
           _buildBankLogo(bank["name"], size: 42),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(bank["name"], style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)), const SizedBox(height: 2), Text(bank["number"], style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.black54, letterSpacing: 1.5))])),
-          IconButton(icon: Icon(Icons.delete_outline_rounded, color: Colors.redAccent.withOpacity(0.8), size: 22), onPressed: () => UserData.removePaymentMethod(bank["id"]))
+          IconButton(icon: Icon(Icons.delete_outline_rounded, color: Colors.redAccent.withValues(alpha: 0.8), size: 22), onPressed: () => UserData.removePaymentMethod(bank["id"]))
         ],
       ),
     );
@@ -823,7 +823,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark, blur: 20),
         child: Container(
           width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.2 : 0.6), width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), blurRadius: 20, offset: const Offset(0, 8))]),
+          decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.2 : 0.6), width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05), blurRadius: 20, offset: const Offset(0, 8))]),
           child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [HugeIcon(icon: HugeIcons.strokeRoundedAdd01, color: Colors.blue, size: 20), SizedBox(width: 8), Text("Add Payment Method", style: TextStyle(color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold))]),
         ),
       ),

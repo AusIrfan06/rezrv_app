@@ -163,7 +163,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (dialogContext) => BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -173,10 +173,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4), width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))],
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10))],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -217,7 +217,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                     ),
                     onPressed: () => Navigator.pop(dialogContext),
                     child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
@@ -238,7 +238,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: color.withOpacity(0.3), width: 1.5)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle, border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5)),
             child: HugeIcon(icon: icon, color: color, size: 32),
           ),
           const SizedBox(height: 8),
@@ -271,8 +271,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       ),
       body: Stack(
         children: [
-          Positioned(top: -100, right: -50, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.05 : 0.1)))),
-          Positioned(bottom: -50, left: -50, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.05 : 0.1)))),
+          Positioned(top: -100, right: -50, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withValues(alpha: isDark ? 0.05 : 0.1)))),
+          Positioned(bottom: -50, left: -50, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withValues(alpha: isDark ? 0.05 : 0.1)))),
 
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -299,7 +299,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isLoggedIn ? Colors.blue.withOpacity(0.5) : Colors.grey.withOpacity(0.3), width: 2)),
+                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isLoggedIn ? Colors.blue.withValues(alpha: 0.5) : Colors.grey.withValues(alpha: 0.3), width: 2)),
                                         child: CircleAvatar(
                                           radius: 50,
                                           backgroundColor: isDark ? Colors.white10 : Colors.black12,
@@ -331,7 +331,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                                          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                                           borderRadius: BorderRadius.circular(20)
                                       ),
                                       child: Row(
@@ -363,7 +363,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark, blur: 10),
                       child: Container(
                         width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(isDark ? 0.1 : 0.15), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.blueAccent.withOpacity(isDark ? 0.3 : 0.5), width: 1.0)),
+                        decoration: BoxDecoration(color: Colors.blueAccent.withValues(alpha: isDark ? 0.1 : 0.15), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.blueAccent.withValues(alpha: isDark ? 0.3 : 0.5), width: 1.0)),
                         child: const Center(child: Text("Log In / Register", style: TextStyle(color: Colors.blueAccent, fontSize: 16, fontWeight: FontWeight.bold))),
                       ),
                     ),
@@ -414,12 +414,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 if (SupabaseService.isUserLoggedIn()) ...[
                   Container(
                     width: double.infinity, padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))]),
+                    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))]),
                     child: Row(
                       children: [
                         const HugeIcon(icon: HugeIcons.strokeRoundedGift, color: Colors.white, size: 40),
                         const SizedBox(width: 16),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)), Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12))])),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Invite Friends", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)), Text("Get RM10 for every referral", style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12))])),
                         const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
                       ],
                     ),
@@ -445,7 +445,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ])),
 
                 const SizedBox(height: 12),
-                Center(child: Column(children: [Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withOpacity(0.3), fontSize: 10))])),
+                Center(child: Column(children: [Text("Rezrv v1.0.4", style: TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontSize: 12, fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text("Made in Malaysia", style: TextStyle(color: Colors.grey.withValues(alpha: 0.3), fontSize: 10))])),
                 const SizedBox(height: 40),
 
                 if (SupabaseService.isUserLoggedIn()) ...[
@@ -461,7 +461,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark, blur: 10),
                       child: Container(
                         width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(color: Colors.redAccent.withOpacity(isDark ? 0.1 : 0.15), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.5), width: 1.0)),
+                        decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: isDark ? 0.1 : 0.15), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.redAccent.withValues(alpha: isDark ? 0.3 : 0.5), width: 1.0)),
                         child: Center(child: Text(l10n.logOut, style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold))),
                       ),
                     ),
@@ -484,7 +484,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return GlassContainer(
       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark),
       child: Container(
-        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(24.0), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0), boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))]),
+        decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(24.0), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.6), width: 1.0), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))]),
         child: child,
       ),
     );
@@ -497,7 +497,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04), borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon: icon, color: isDark ? Colors.white : Colors.black87, size: 20)),
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon: icon, color: isDark ? Colors.white : Colors.black87, size: 20)),
           const SizedBox(width: 16),
           Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
           if (trailing != null) trailing
@@ -508,14 +508,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Widget _buildThemeToggleTile(BuildContext context, bool isDark, String label) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(children: [
-        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04), borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon: isDark ? HugeIcons.strokeRoundedMoon02 : HugeIcons.strokeRoundedSun01, color: isDark ? Colors.blue : Colors.orange, size: 20)),
+        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)), child: HugeIcon(icon: isDark ? HugeIcons.strokeRoundedMoon02 : HugeIcons.strokeRoundedSun01, color: isDark ? Colors.blue : Colors.orange, size: 20)),
         const SizedBox(width: 16),
         Expanded(child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
         Switch.adaptive(value: isDark, activeColor: Colors.blue, onChanged: (v) { appThemeNotifier.value = v ? ThemeMode.dark : ThemeMode.light; })
       ])
   );
 
-  Widget _buildDivider(bool isDark) => Padding(padding: const EdgeInsets.only(left: 60, right: 16), child: Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)));
+  Widget _buildDivider(bool isDark) => Padding(padding: const EdgeInsets.only(left: 60, right: 16), child: Divider(height: 1, color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)));
   Widget _buildArrow() => const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.grey, size: 20);
 
   void _showLanguageSelector(BuildContext context) {
@@ -547,7 +547,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: isSelected ? color : Colors.transparent, width: 1.5)),
-      tileColor: color.withOpacity(0.05),
+      tileColor: color.withValues(alpha: 0.05),
       leading: HugeIcon(icon: icon, color: color, size: 22),
       title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
       trailing: isSelected ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: color, size: 20) : null,

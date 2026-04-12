@@ -20,11 +20,11 @@ Widget _buildBackgroundGlows(bool isDark) {
     children: [
       Positioned(
         top: -50, right: -100,
-        child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.08 : 0.15))),
+        child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withValues(alpha: isDark ? 0.08 : 0.15))),
       ),
       Positioned(
         bottom: 100, left: -100,
-        child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.06 : 0.12))),
+        child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withValues(alpha: isDark ? 0.06 : 0.12))),
       ),
     ],
   );
@@ -76,7 +76,7 @@ class LegalTextScreen extends StatelessWidget {
                 useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 24.0), settings: _getGlassSettings(isDark),
                 child: Container(
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.5), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.05 : 0.6))),
+                  decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.6))),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Text(content, style: TextStyle(fontSize: 14, height: 1.6, color: isDark ? Colors.white70 : Colors.black87)),
@@ -187,7 +187,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(
                               index < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                              color: index < _rating ? Colors.orangeAccent : Colors.grey.withOpacity(0.5), size: 40,
+                              color: index < _rating ? Colors.orangeAccent : Colors.grey.withValues(alpha: 0.5), size: 40,
                             ),
                           ),
                         );
@@ -202,7 +202,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
                         useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 20.0), settings: _getGlassSettings(isDark),
                         child: Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6))),
+                          decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6))),
                           child: TextField(
                             controller: _feedbackController, maxLines: 4,
                             style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
@@ -220,7 +220,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
                         onTap: _rating > 0 ? _submitFeedback : () {},
                         child: Container(
                           width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 18),
-                          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))]),
+                          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))]),
                           child: const Center(child: Text("Submit Review", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5))),
                         ),
                       ),

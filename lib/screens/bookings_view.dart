@@ -12,7 +12,8 @@ import '../data/user_data.dart';
 import '../services/notification_service.dart'; // 🟢 ADD THIS LINE
 import '../utils/glass_toast.dart'; // 🟢 ADD THIS TO YOUR IMPORTS
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'dart:math'; // 🟢 Required for generating the short ID
+import 'dart:async';
 
 class BookingsView extends StatefulWidget {
   final String shopId; // 🟢 ADD THIS
@@ -50,8 +51,6 @@ class _BookingsViewState extends State<BookingsView> {
   int _frontCardIndex = 0;
   int _currentStep = 0;
   bool _isSubmitted = false;
-  late PageController _staffPageController;
-
   // 🟢 We save the ID here so the success screen can use it
   String _generatedBookingId = "";
 
@@ -86,6 +85,9 @@ class _BookingsViewState extends State<BookingsView> {
   ];
 
   final List<String> _banksList = ["Maybank2u", "CIMB Clicks", "Public Bank", "RHB Now"];
+
+  StreamSubscription<List<Map<String, dynamic>>>? _timeStream;
+  String? _holdingRecordId;
 
   int get _totalPrice {
     int total = 0;
@@ -142,34 +144,6 @@ class _BookingsViewState extends State<BookingsView> {
     });
   }
 
-  Future<void> _fetchBookedTimes() async {
-    if (_dates.isEmpty) return;
-
-    final selectedDateStr = _dates[_selectedDateIndex]['fullDate']!.substring(0, 10); // Gets YYYY-MM-DD
-    final currentProvider = _staffs[_frontCardIndex]["name"]!; // 🟢 Add the '!' at the end
-
-    try {
-      final response = await Supabase.instance.client
-          .from('bookings')
-          .select('booking_time')
-          .eq('shop_id', widget.shopId)
-          .eq('provider_name', currentProvider)
-          .like('booking_time', '$selectedDateStr%');
-
-      if (mounted) {
-        setState(() {
-          // Convert database timestamps back into "HH:MM" format
-          _bookedTimes = response.map<String>((booking) {
-            final DateTime dt = DateTime.parse(booking['booking_time']).toLocal();
-            return "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
-          }).toList();
-        });
-      }
-    } catch (e) {
-      debugPrint("Error fetching booked times: $e");
-    }
-  }
-
   // 🟢 Generates 60 days (~2 months) of valid upcoming dates
   void _generateUpcomingDates() {
     final now = DateTime.now();
@@ -195,8 +169,10 @@ class _BookingsViewState extends State<BookingsView> {
         if (_isTimeValid(_times[t], d)) {
           setState(() {
             _selectedDateIndex = d;
-            _selectedTimeIndex = t;
-            _selectedCalendarDate = DateTime.parse(_dates[d]['fullDate']!); // 🟢 Syncs calendar UI
+            // 🟢 FIX 1: Forces the time to be unselected initially!
+            _selectedTimeIndex = -1;
+            _selectedTime = '';
+            _selectedCalendarDate = DateTime.parse(_dates[d]['fullDate']!);
           });
           return;
         }
@@ -204,21 +180,40 @@ class _BookingsViewState extends State<BookingsView> {
     }
   }
 
+  void _listenToRealtimeBookings() {
+    // 🟢 Magic Stream: Updates the screen instantly if ANYONE books a slot!
+    _timeStream = Supabase.instance.client
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('business_id', widget.shopId)
+        .listen((data) {
+      if (!mounted) return;
+      setState(() {
+        _bookedTimes = data
+            .where((b) => b['status'] != 'cancelled') // Keep 'holding', 'pending', and 'confirmed' blocked
+            .map<String>((booking) => booking['booking_time'].toString())
+            .toList();
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     // 🟢 CHANGED TO 0.85 so the left and right cards are clearly visible
-    _staffPageController = PageController(viewportFraction: 0.85, initialPage: 10000);
-
     _generateUpcomingDates();
     _selectFirstAvailableSlot();
     _recoverLostDraft();
+    _listenToRealtimeBookings();
   }
 
   @override
   void dispose() {
-    // 🟢 DISPOSE IT HERE
-    _staffPageController.dispose();
+    _timeStream?.cancel();
+    // 🟢 SAFETY CATCH: If they swipe out of the app while holding a slot, delete the lock!
+    if (_holdingRecordId != null && !_isSubmitted) {
+      Supabase.instance.client.from('bookings').delete().eq('id', _holdingRecordId!);
+    }
     super.dispose();
   }
 
@@ -254,11 +249,11 @@ class _BookingsViewState extends State<BookingsView> {
               ),
               Positioned(
                 top: -100, left: -100,
-                child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withOpacity(isDark ? 0.2 : 0.35))),
+                child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withValues(alpha: isDark ? 0.2 : 0.35))),
               ),
               Positioned(
                 bottom: 100, right: -50,
-                child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.indigo.withOpacity(isDark ? 0.15 : 0.25))),
+                child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.indigo.withValues(alpha: isDark ? 0.15 : 0.25))),
               ),
               Positioned.fill(
                 child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60), child: const SizedBox()), // 🟢 FIXED
@@ -267,6 +262,7 @@ class _BookingsViewState extends State<BookingsView> {
               SafeArea(
                 bottom: false,
                 child: SingleChildScrollView(
+                  // 🟢 RESTORED: Left and Right padding! The cards are no longer infinite width.
                   padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,57 +292,86 @@ class _BookingsViewState extends State<BookingsView> {
                       ),
                       const SizedBox(height: 16),
 
-                      // 🟢 REPLACED THE ENTIRE GESTURE DETECTOR AND STACK WITH THIS:
-                      // 🟢 THE SMOOTH CAROUSEL ENGINE
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.76, // 🟢 FIXED STRICT HEIGHT
-                        child: PageView.builder(
-                          controller: _staffPageController,
-                          // Locks swipe when checking out
-                          physics: _currentStep > 0 ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
-                          onPageChanged: (pageIndex) {
-                            setState(() => _frontCardIndex = pageIndex % _staffs.length);
-                          },
-                          itemBuilder: (context, index) {
-                            return AnimatedBuilder(
-                              animation: _staffPageController,
-                              builder: (context, child) {
-                                // 1. Calculate how far this specific card is from the center
-                                double pageOffset = 0;
-                                if (_staffPageController.position.haveDimensions) {
-                                  pageOffset = _staffPageController.page! - index;
-                                } else {
-                                  pageOffset = (10000 - index).toDouble(); // Initial load fallback
-                                }
+                      // 🟢 RESTORED: THE CLASSIC VERTICAL 3D STACK
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragEnd: (DragEndDetails details) {
+                          if (isFocused) return; // Locks swipe when they start checkout
+                          if (details.primaryVelocity == null) return;
 
-                                // 2. Smoothly shrink the side cards
-                                double scale = 1 - (pageOffset.abs() * 0.12);
-                                scale = scale.clamp(0.85, 1.0);
+                          if (details.primaryVelocity! > 300) {
+                            setState(() => _frontCardIndex = (_frontCardIndex + 1) % _staffs.length);
+                          } else if (details.primaryVelocity! < -300) {
+                            setState(() => _frontCardIndex = (_frontCardIndex - 1 + _staffs.length) % _staffs.length);
+                          }
+                        },
+                        child: SizedBox(
+                          // 🟢 THE MASTER HEIGHT: Dictates the total space available for the deck.
+                          height: MediaQuery.of(context).size.height * 0.74,
+                          child: Stack(
+                            alignment: Alignment.topCenter,
+                            clipBehavior: Clip.none,
+                            children: orderedIndices.map((index) {
+                              int relativePosition = (index - _frontCardIndex + _staffs.length) % _staffs.length;
 
-                                // 3. Smoothly fade the side cards
-                                double opacity = 1 - (pageOffset.abs() * 0.6);
-                                opacity = opacity.clamp(0.4, 1.0);
+                              double top; double scale; double opacity;
 
-                                int realIndex = index % _staffs.length;
-                                bool isActiveCard = pageOffset.abs() < 0.5; // True if it is the center card
+                              // 🟢 RESTORED: The exact original math that creates the beautiful top stack!
+                              if (relativePosition == 0) {
+                                top = isFocused ? 10 : 100;
+                                scale = 1.0; opacity = 1.0;
+                              } else if (relativePosition == 1) {
+                                top = isFocused ? 10 : 45;
+                                scale = isFocused ? 0.8 : 0.9;
+                                opacity = isFocused ? 0.0 : 0.9;
+                              } else if (relativePosition == 2) {
+                                top = isFocused ? 10 : 5;
+                                scale = 0.8;
+                                opacity = isFocused ? 0.0 : 0.6;
+                              } else {
+                                top = 5; scale = 0.8; opacity = 0.0;
+                              }
 
-                                return Align(
+                              return AnimatedPositioned(
+                                key: ValueKey(index),
+                                duration: const Duration(milliseconds: 600),
+                                curve: Curves.easeOutQuint,
+                                top: top,
+                                left: 0,
+                                right: 0,
+                                // 🟢 THE MAGIC FIX:
+                                // - If it is the Active Card (0), its bottom is ALWAYS locked to 0.
+                                // - If it is an inactive card in the back, it uses the old math so the scale looks right.
+                                bottom: relativePosition == 0 ? 0 : (isFocused ? 0 : -top),
+                                child: AnimatedScale(
+                                  duration: const Duration(milliseconds: 600),
+                                  curve: Curves.easeOutQuint,
+                                  scale: scale,
                                   alignment: Alignment.topCenter,
-                                  child: Transform.scale(
-                                    scale: scale,
-                                    child: Opacity(
-                                      opacity: opacity,
-                                      child: _buildExpandedGlassCard(
-                                          _staffs[realIndex],
-                                          isDark,
-                                          isActiveCard
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 400),
+                                    opacity: opacity,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        // Brings card to front when tapped
+                                        if (relativePosition != 0 && !isFocused) {
+                                          setState(() => _frontCardIndex = index);
+                                        }
+                                      },
+                                      child: AbsorbPointer(
+                                        absorbing: relativePosition != 0, // Blocks accidental button clicks on back cards
+                                        child: _buildExpandedGlassCard(
+                                            _staffs[index],
+                                            isDark,
+                                            relativePosition == 0 // Only true for active card
+                                        ),
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            );
-                          },
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ],
@@ -369,9 +394,9 @@ class _BookingsViewState extends State<BookingsView> {
           width: width,
           padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.08 * opacity) : Colors.white.withOpacity(0.5 * opacity),
+            color: isDark ? Colors.white.withValues(alpha: 0.08 * opacity) : Colors.white.withValues(alpha: 0.5 * opacity),
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.4), width: 1.5),
+            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.4), width: 1.5),
           ),
           child: child,
         ),
@@ -406,14 +431,10 @@ class _BookingsViewState extends State<BookingsView> {
       isDark: isDark,
       radius: 28,
       padding: const EdgeInsets.all(20),
-
-      // 🟢 THE FIX: Force the card to fill the parent container completely!
-      // This ensures Step 1 is exactly the same height as Steps 2 and 3.
-      height: double.infinity,
+      height: null,
 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        // 🟢 ALWAYS stretch to max size
         mainAxisSize: MainAxisSize.max,
         children: [
           AnimatedSwitcher(
@@ -428,7 +449,7 @@ class _BookingsViewState extends State<BookingsView> {
               child: Row(
                 children: [
                   Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]),
+                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)]),
                       child: CircleAvatar(backgroundImage: NetworkImage(staff["image"]!), radius: 24)
                   ),
                   const SizedBox(width: 12),
@@ -450,7 +471,7 @@ class _BookingsViewState extends State<BookingsView> {
                 : const SizedBox.shrink(),
           ),
 
-          // 🟢 ALWAYS wrap in Expanded so it fills the bottom of the card perfectly
+          // Always wrap in Expanded so it fills the bottom of the card perfectly
           Expanded(child: contentSwitcher),
         ],
       ),
@@ -473,7 +494,8 @@ class _BookingsViewState extends State<BookingsView> {
 
     return Column(
       key: const ValueKey("booking_flow"),
-      mainAxisSize: isFocused ? MainAxisSize.max : MainAxisSize.min,
+      // 🟢 FIX 1: Always take maximum available height from parent
+      mainAxisSize: MainAxisSize.max,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -483,14 +505,16 @@ class _BookingsViewState extends State<BookingsView> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 height: 4, width: _currentStep == index ? 20 : 6,
-                decoration: BoxDecoration(color: _currentStep == index ? Colors.blue : Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: _currentStep == index ? Colors.blue : Colors.grey.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(10)),
               ),
             );
           }),
         ),
         const SizedBox(height: 16),
 
-        isFocused ? Expanded(child: stepSwitcher) : stepSwitcher,
+        // 🟢 FIX 2: ALWAYS wrap the content in Expanded!
+        // This forces the Step contents to respect the card's boundaries and prevents the pixel overflow.
+        Expanded(child: stepSwitcher),
 
         const SizedBox(height: 20),
 
@@ -498,11 +522,18 @@ class _BookingsViewState extends State<BookingsView> {
           children: [
             if (_currentStep > 0) ...[
               _AnimatedPressable(
-                onTap: () => setState(() => _currentStep--),
+                onTap: () async {
+                  // 🟢 IF they back out of the checkout, RELEASE THE SLOT so others can book it!
+                  if (_currentStep == 1 && _holdingRecordId != null) {
+                    await Supabase.instance.client.from('bookings').delete().eq('id', _holdingRecordId!);
+                    _holdingRecordId = null;
+                  }
+                  setState(() => _currentStep--);
+                },
                 child: Container(
                   height: 50, width: 50,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(child: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black87, size: 18)),
@@ -513,9 +544,40 @@ class _BookingsViewState extends State<BookingsView> {
             Expanded(
               child: _AnimatedPressable(
                 onTap: () async {
-                  if (_currentStep < 2) {
+                  // 🟢 STEP 1: CREATE THE TEMPORARY LOCK
+                  if (_currentStep == 0) {
+                    if (_selectedTimeIndex == -1) {
+                      showGlassToast(context, "Please select an available time slot.", isError: true);
+                      return;
+                    }
+
+                    final String targetDate = _dates[_selectedDateIndex]['fullDate']!.substring(0, 10);
+                    final String targetTime = _times[_selectedTimeIndex];
+
+                    try {
+                      // Insert a 'holding' record to claim the slot instantly!
+                      final holdResponse = await Supabase.instance.client.from('bookings').insert({
+                        'business_id': widget.shopId,
+                        'customer_name': UserData.userName.value.isNotEmpty ? UserData.userName.value : 'Guest',
+                        'service_name': 'Holding...',
+                        'booking_date': targetDate,
+                        'booking_time': targetTime,
+                        'status': 'holding', // 🟢 Locks the slot for everyone else!
+                        'pax': 1,
+                        'booking_metadata': { 'customer_auth_id': Supabase.instance.client.auth.currentUser!.id }
+                      }).select().single();
+
+                      _holdingRecordId = holdResponse['id'].toString();
+                      setState(() => _currentStep++);
+                    } catch (e) {
+                      showGlassToast(context, "Slot just got taken by someone else! Try another.", isError: true);
+                    }
+
+                  } else if (_currentStep == 1) {
                     setState(() => _currentStep++);
                   } else {
+
+                    // 🟢 STEP 3: FINALIZE CHECKOUT
                     if (_selectedPaymentIndex == 0) {
                       final hasCards = UserData.savedPaymentMethods.value.any((m) => m["type"] == "card");
                       if (!hasCards) {
@@ -524,75 +586,56 @@ class _BookingsViewState extends State<BookingsView> {
                       }
                     }
 
-                    final dateStr = "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}";
-                    final timeStr = _times[_selectedTimeIndex];
-                    final String bId = "RZRV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}";
-
-                    final parsedDate = DateTime.parse(_dates[_selectedDateIndex]['fullDate']!);
-                    final timeParts = timeStr.split(':');
-                    final finalBookingTime = DateTime(
-                        parsedDate.year, parsedDate.month, parsedDate.day,
-                        int.parse(timeParts[0]), int.parse(timeParts[1])
-                    ).toIso8601String();
+                    // Generate Short ID
+                    final dt = DateTime.now();
+                    final datePart = "${dt.year.toString().substring(2)}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}";
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                    final rnd = Random();
+                    final randomPart = String.fromCharCodes(Iterable.generate(5, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
+                    final String shortBookingId = "RZRV-$datePart-$randomPart";
 
                     try {
-                      await Supabase.instance.client.from('bookings').insert({
-                        'shop_id': widget.shopId,
-                        'customer_id': Supabase.instance.client.auth.currentUser!.id,
-                        'customer_name': UserData.userName.value.isNotEmpty ? UserData.userName.value : 'Walk-in',
-                        'provider_name': staff["name"],
-                        'service_id': _servicesList[_selectedServices.first]["name"],
-                        'booking_time': finalBookingTime,
+                      // 🟢 UPDATE the existing lock to 'pending' with all the final details!
+                      await Supabase.instance.client.from('bookings').update({
+                        'service_name': _servicesList[_selectedServices.first]["name"]!,
                         'status': 'pending',
+                        'booking_metadata': {
+                          'short_ref': shortBookingId, // For your UI
+                          'booking_id': shortBookingId, // For the MyRezrvView sync
+                          'customer_auth_id': Supabase.instance.client.auth.currentUser!.id,
+                          'provider_name': staff["name"],
+                          'total_price': "RM$_totalPrice",
+                          // 🟢 Save Shop details so MyRezrvView can display them directly from the DB!
+                          'shop_name': widget.shopName,
+                          'shop_image': widget.shopImage,
+                          'category': widget.category
+                        }
+                      }).eq('id', _holdingRecordId!);
+
+                      final dateStr = "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}";
+                      final timeStr = _times[_selectedTimeIndex];
+
+                      LocalNotificationService.showBookingConfirmed(
+                        shopName: widget.shopName, category: widget.category, shopImage: widget.shopImage,
+                        providerName: staff["name"]!, date: dateStr, time: timeStr, totalPrice: "RM$_totalPrice", bookingId: shortBookingId,
+                      );
+
+                      setState(() {
+                        _generatedBookingId = shortBookingId;
+                        _isSubmitted = true;
                       });
-                    } on PostgrestException catch (e) {
-                      if (e.code == '23505') {
-                        showGlassToast(context, "Oops! Someone just booked this slot. Please pick another time.", isError: true);
-                        _fetchBookedTimes();
-                      } else {
-                        showGlassToast(context, "Database error: ${e.message}", isError: true);
-                      }
-                      return;
+
                     } catch (e) {
-                      showGlassToast(context, "Failed to connect. Try again.", isError: true);
-                      return;
+                      showGlassToast(context, "Failed to confirm payment. Try again.", isError: true);
                     }
-
-                    RezrvData.addReservation(
-                      title: widget.shopName,
-                      category: widget.category,
-                      date: dateStr,
-                      img: widget.shopImage,
-                      time: timeStr,
-                      providerName: staff["name"]!,
-                      totalPrice: "RM$_totalPrice",
-                      bookingId: bId,
-                    );
-
-                    LocalNotificationService.showBookingConfirmed(
-                      shopName: widget.shopName,
-                      category: widget.category,
-                      shopImage: widget.shopImage,
-                      providerName: staff["name"]!,
-                      date: dateStr,
-                      time: timeStr,
-                      totalPrice: "RM$_totalPrice",
-                      bookingId: bId,
-                    );
-
-                    setState(() {
-                      _generatedBookingId = bId;
-                      _isSubmitted = true;
-                    });
                   }
                 },
-                // 🟢 FIXED: "child:" label is back where it belongs!
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)]),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 6), spreadRadius: 1)],
+                    boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 15, offset: const Offset(0, 6), spreadRadius: 1)],
                   ),
                   child: Center(
                       child: Text(
@@ -635,8 +678,8 @@ class _BookingsViewState extends State<BookingsView> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E242B).withOpacity(0.8) : Colors.white.withOpacity(0.8),
-                  border: Border(top: BorderSide(color: Colors.white.withOpacity(isDark ? 0.1 : 0.4), width: 1.5)),
+                  color: isDark ? const Color(0xFF1E242B).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.4), width: 1.5)),
                 ),
                 child: SingleChildScrollView(
                   child: Form(
@@ -645,7 +688,7 @@ class _BookingsViewState extends State<BookingsView> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
+                        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)))),
                         const SizedBox(height: 16),
                         Text("Add Credit/Debit Card", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
@@ -707,7 +750,7 @@ class _BookingsViewState extends State<BookingsView> {
                               Navigator.pop(context);
                             }
                           },
-                          child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Save Card", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
+                          child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Save Card", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -744,8 +787,8 @@ class _BookingsViewState extends State<BookingsView> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E242B).withOpacity(0.8) : Colors.white.withOpacity(0.8),
-                        border: Border(top: BorderSide(color: Colors.white.withOpacity(isDark ? 0.1 : 0.4), width: 1.5)),
+                        color: isDark ? const Color(0xFF1E242B).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+                        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.4), width: 1.5)),
                       ),
                       child: SingleChildScrollView(
                         child: Form(
@@ -754,7 +797,7 @@ class _BookingsViewState extends State<BookingsView> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
+                              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)))),
                               const SizedBox(height: 16),
                               Text("Link Bank Account", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
@@ -766,7 +809,7 @@ class _BookingsViewState extends State<BookingsView> {
                                   const SizedBox(height: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(14)),
+                                    decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(14)),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
                                         value: selectedBank,
@@ -812,7 +855,7 @@ class _BookingsViewState extends State<BookingsView> {
                                     Navigator.pop(context);
                                   }
                                 },
-                                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Link Account", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
+                                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.green.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]), child: const Center(child: Text("Link Account", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)))),
                               ),
                               const SizedBox(height: 12),
                             ],
@@ -837,7 +880,7 @@ class _BookingsViewState extends State<BookingsView> {
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(14)),
           child: TextFormField(
             controller: controller, keyboardType: keyboardType, inputFormatters: formatters, validator: validator, textCapitalization: textCapitalization ?? TextCapitalization.none,
             style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontSize: 14),
@@ -854,120 +897,210 @@ class _BookingsViewState extends State<BookingsView> {
 
   Widget _buildStepOneTimeSelection(bool isDark) {
     final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final maxDate = now.add(const Duration(days: 89));
 
-    return Column(
+    // Extracts the currently selected date strings for the bright header
+    String selDay = _dates[_selectedDateIndex]['day']!;
+    String selDate = _dates[_selectedDateIndex]['date']!;
+    String selMonth = _dates[_selectedDateIndex]['month']!;
+
+    // Initialize displayed month to match the selected calendar date
+    DateTime displayedMonth = DateTime(_selectedCalendarDate.year, _selectedCalendarDate.month, 1);
+    final List<String> monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    final List<String> shortDays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+    return SingleChildScrollView(
       key: const ValueKey(0),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 🟢 HEADER WITH CURRENT MONTH
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.bkApptDate, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
-            Text(
-                "${_dates[_selectedDateIndex]['month']} ${_dates[_selectedDateIndex]['year']}",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 20),
+      child: StatefulBuilder(
+          builder: (context, setLocalState) {
+            int daysInMonth = DateUtils.getDaysInMonth(displayedMonth.year, displayedMonth.month);
+            int firstWeekday = DateTime(displayedMonth.year, displayedMonth.month, 1).weekday; // 1 = Monday
 
-        // 🟢 MODERN HORIZONTAL DATE SCROLLER
-        SizedBox(
-          height: 95,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            clipBehavior: Clip.none,
-            itemCount: _dates.length,
-            itemBuilder: (context, index) {
-              bool isSelected = index == _selectedDateIndex;
-              String day = _dates[index]['day']!.substring(0, 3); // "Mon"
-              String date = _dates[index]['date']!; // "14"
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 🟢 DUAL CONFIRMATION HEADER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(l10n.bkApptDate, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+                    Text(
+                        "$selDay, $selDate $selMonth",
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.blueAccent)
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDateIndex = index;
-                    _selectedCalendarDate = DateTime.parse(_dates[index]['fullDate']!);
-
-                    // Auto-select valid time for the new day
-                    if (_selectedTimeIndex == -1 || !_isTimeValid(_times[_selectedTimeIndex], index)) {
-                      _selectedTimeIndex = -1;
-                      _selectedTime = '';
-                      for (int t = 0; t < _times.length; t++) {
-                        if (_isTimeValid(_times[t], index)) {
-                          _selectedTimeIndex = t;
-                          _selectedTime = _times[t];
-                          break;
-                        }
-                      }
-                    }
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.only(right: 12),
-                  width: 70, // Fixed width for perfect squares
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03)),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isSelected ? Colors.blueAccent : Colors.transparent, width: 2),
-                    boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] : [],
-                  ),
+                // 🟢 FULLY CUSTOM PREMIUM GLASS CALENDAR
+                _buildGlassBox(
+                  isDark: isDark,
+                  radius: 20,
+                  padding: const EdgeInsets.all(16),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(day, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isSelected ? Colors.white.withOpacity(0.9) : (isDark ? Colors.white54 : Colors.black54))),
-                      const SizedBox(height: 4),
-                      Text(date, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black87))),
+                      // --- MONTH NAVIGATION HEADER ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              DateTime prev = DateTime(displayedMonth.year, displayedMonth.month - 1, 1);
+                              if (prev.isAfter(DateTime(now.year, now.month - 1, 28))) {
+                                setLocalState(() => displayedMonth = prev);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05), shape: BoxShape.circle),
+                              child: Icon(Icons.chevron_left_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                            ),
+                          ),
+                          Text(
+                            "${monthNames[displayedMonth.month - 1]} ${displayedMonth.year}",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              DateTime next = DateTime(displayedMonth.year, displayedMonth.month + 1, 1);
+                              if (next.isBefore(maxDate.add(const Duration(days: 30)))) {
+                                setLocalState(() => displayedMonth = next);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05), shape: BoxShape.circle),
+                              child: Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --- DAYS OF THE WEEK ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: shortDays.map((day) => Expanded(
+                          child: Center(child: Text(day, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white54 : Colors.black54))),
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // --- THE CUSTOM DATE GRID ---
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: daysInMonth + firstWeekday - 1,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 1.0,
+                        ),
+                        itemBuilder: (context, index) {
+                          if (index < firstWeekday - 1) return const SizedBox.shrink(); // Empty day slot before the 1st
+
+                          int day = index - (firstWeekday - 1) + 1;
+                          DateTime thisDate = DateTime(displayedMonth.year, displayedMonth.month, day);
+
+                          DateTime pureThisDate = DateTime(thisDate.year, thisDate.month, thisDate.day);
+                          DateTime pureNow = DateTime(now.year, now.month, now.day);
+                          DateTime pureSelected = DateTime(_selectedCalendarDate.year, _selectedCalendarDate.month, _selectedCalendarDate.day);
+
+                          bool isSelected = pureSelected == pureThisDate;
+                          bool isPast = pureThisDate.isBefore(pureNow) || pureThisDate.isAfter(maxDate);
+
+                          return GestureDetector(
+                            onTap: isPast ? null : () {
+                              setState(() {
+                                _selectedCalendarDate = thisDate;
+
+                                final targetString = thisDate.toIso8601String().substring(0, 10);
+                                _selectedDateIndex = _dates.indexWhere((d) => d['fullDate']!.substring(0, 10) == targetString);
+                                if (_selectedDateIndex == -1) _selectedDateIndex = 0;
+
+                                // 🟢 FIX 2: Completely clear the time selection when a new date is tapped!
+                                // (Removed the for-loop that used to auto-select a time here)
+                                _selectedTimeIndex = -1;
+                                _selectedTime = '';
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  // 🟢 THE FIX: Transparent border for inactive dates! Only the active one gets the blue ring.
+                                    color: isSelected ? Colors.blueAccent : Colors.transparent,
+                                    width: 1.5
+                                ),
+                                boxShadow: isSelected ? [BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.6), blurRadius: 12, spreadRadius: 1)] : [],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  day.toString(),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    color: isSelected ? Colors.white : (isPast ? (isDark ? Colors.white30 : Colors.black26) : (isDark ? Colors.white : Colors.black87)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
-        ),
 
-        const SizedBox(height: 28),
-        Text(l10n.bkAvailTime, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
-        const SizedBox(height: 12),
+                const SizedBox(height: 28),
+                Text(l10n.bkAvailTime, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+                const SizedBox(height: 12),
 
-        // 🟢 HORIZONTAL TIME SCROLL
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          clipBehavior: Clip.none,
-          child: Row(
-            children: List.generate(_times.length, (i) {
-              bool isValid = _isTimeValid(_times[i], _selectedDateIndex);
+                // 🟢 HORIZONTAL TIME SCROLL
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  clipBehavior: Clip.none,
+                  child: Row(
+                    children: List.generate(_times.length, (i) {
+                      bool isValid = _isTimeValid(_times[i], _selectedDateIndex);
 
-              if (!isValid) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
-                    ),
-                    child: Center(
-                        child: Text(_times[i], style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white24 : Colors.black26))
-                    ),
+                      if (!isValid) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+                            ),
+                            child: Center(
+                                child: Text(_times[i], style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white24 : Colors.black26))
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: _buildScrollTimeChip(_times[i], i == _selectedTimeIndex, isDark, i),
+                      );
+                    }),
                   ),
-                );
-              }
-
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: _buildScrollTimeChip(_times[i], i == _selectedTimeIndex, isDark, i),
-              );
-            }),
-          ),
-        ),
-        const SizedBox(height: 10),
-      ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            );
+          }
+      ),
     );
   }
 
@@ -979,10 +1112,10 @@ class _BookingsViewState extends State<BookingsView> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), // Gives the pill shape
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
+          color: isSelected ? Colors.blue : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
+          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 0)] : [],
         ),
         child: Text(time, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87))),
       ),
@@ -1005,10 +1138,10 @@ class _BookingsViewState extends State<BookingsView> {
         // 🟢 Padding gives the chip its shape in a Row!
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
+          color: isSelected ? Colors.blue : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
+          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 0)] : [],
         ),
         child: Center(
           child: Text(
@@ -1050,7 +1183,7 @@ class _BookingsViewState extends State<BookingsView> {
               Transform.scale(
                 scale: 0.85,
                 child: Switch(
-                  value: _hasAllergies, activeColor: Colors.blue, activeTrackColor: Colors.blue.withOpacity(0.3), inactiveThumbColor: isDark ? Colors.grey[400] : Colors.grey[300], inactiveTrackColor: isDark ? Colors.white10 : Colors.black12, onChanged: (val) => setState(() => _hasAllergies = val),
+                  value: _hasAllergies, activeColor: Colors.blue, activeTrackColor: Colors.blue.withValues(alpha: 0.3), inactiveThumbColor: isDark ? Colors.grey[400] : Colors.grey[300], inactiveTrackColor: isDark ? Colors.white10 : Colors.black12, onChanged: (val) => setState(() => _hasAllergies = val),
                 ),
               ),
             ],
@@ -1073,9 +1206,9 @@ class _BookingsViewState extends State<BookingsView> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(isDark ? 0.05 : 0.2)),
+              border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1085,7 +1218,7 @@ class _BookingsViewState extends State<BookingsView> {
 
                 Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1, color: Colors.grey.withOpacity(0.2))
+                    child: Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2))
                 ),
 
                 _buildSummaryRow("Location", widget.shopName, Icons.storefront, isDark),
@@ -1097,7 +1230,7 @@ class _BookingsViewState extends State<BookingsView> {
 
                 Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1, color: Colors.grey.withOpacity(0.2))
+                    child: Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2))
                 ),
 
                 Row(
@@ -1127,9 +1260,9 @@ class _BookingsViewState extends State<BookingsView> {
                 curve: Curves.easeInOut,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: isSel ? Colors.blue.withOpacity(0.05) : (isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.5)),
+                  color: isSel ? Colors.blue.withValues(alpha: 0.05) : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.5)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isSel ? Colors.blue : Colors.white.withOpacity(isDark ? 0.05 : 0.6), width: 1.5),
+                  border: Border.all(color: isSel ? Colors.blue : Colors.white.withValues(alpha: isDark ? 0.05 : 0.6), width: 1.5),
                 ),
                 child: Column(
                   children: [
@@ -1189,7 +1322,7 @@ class _BookingsViewState extends State<BookingsView> {
                                 onTap: () => _showAddCardSheet(context, isDark),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.withOpacity(0.3))),
+                                  decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.withValues(alpha: 0.3))),
                                   child: const Center(child: Text("+ Add New Card", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
                                 ),
                               );
@@ -1211,9 +1344,9 @@ class _BookingsViewState extends State<BookingsView> {
                                     margin: const EdgeInsets.only(bottom: 6),
                                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                     decoration: BoxDecoration(
-                                      color: isSubSel ? Colors.blue.withOpacity(0.15) : (isDark ? Colors.black26 : Colors.white),
+                                      color: isSubSel ? Colors.blue.withValues(alpha: 0.15) : (isDark ? Colors.black26 : Colors.white),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: isSubSel ? Colors.blue.withOpacity(0.5) : Colors.transparent),
+                                      border: Border.all(color: isSubSel ? Colors.blue.withValues(alpha: 0.5) : Colors.transparent),
                                     ),
                                     child: Row(
                                       children: [
@@ -1245,9 +1378,9 @@ class _BookingsViewState extends State<BookingsView> {
                                 margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: isSubSel ? Colors.blue.withOpacity(0.15) : (isDark ? Colors.black26 : Colors.white),
+                                  color: isSubSel ? Colors.blue.withValues(alpha: 0.15) : (isDark ? Colors.black26 : Colors.white),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: isSubSel ? Colors.blue.withOpacity(0.5) : Colors.transparent),
+                                  border: Border.all(color: isSubSel ? Colors.blue.withValues(alpha: 0.5) : Colors.transparent),
                                 ),
                                 child: Row(
                                   children: [
@@ -1304,7 +1437,7 @@ class _BookingsViewState extends State<BookingsView> {
           gradient: const LinearGradient(colors: [Color(0xFF42A5F5), Color(0xFF1976D2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(24),
           border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
-          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))] : [],
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 15, offset: const Offset(0, 8))] : [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1314,15 +1447,15 @@ class _BookingsViewState extends State<BookingsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const HugeIcon(icon: HugeIcons.strokeRoundedBitcoinSquare, color: Colors.white70, size: 24),
-                Text(method["name"], style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                Text(method["name"], style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
               ],
             ),
             Text(method["number"], style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: 2.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Card Holder", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 10)), Text(method["holder"], style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))]),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Expires", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 10)), Text(method["expiry"], style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))]),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Card Holder", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)), Text(method["holder"], style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))]),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Expires", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)), Text(method["expiry"], style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))]),
               ],
             )
           ],
@@ -1337,7 +1470,7 @@ class _BookingsViewState extends State<BookingsView> {
           color: isDark ? const Color(0xFF262626) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: isSelected ? Border.all(color: Colors.blue, width: 2) : Border.all(color: isDark ? Colors.white12 : Colors.black12),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))] : [],
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))] : [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1347,7 +1480,7 @@ class _BookingsViewState extends State<BookingsView> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: (isBank ? Colors.green : Colors.orange).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(color: (isBank ? Colors.green : Colors.orange).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                   child: HugeIcon(icon: isBank ? HugeIcons.strokeRoundedBank : HugeIcons.strokeRoundedCreditCard, color: isBank ? Colors.green : Colors.orange, size: 28),
                 ),
                 const SizedBox(width: 16),
@@ -1423,9 +1556,9 @@ class _BookingsViewState extends State<BookingsView> {
                 Container(
                   height: 100, width: 100,
                   decoration: BoxDecoration(
-                    color: Colors.greenAccent.withOpacity(0.2), shape: BoxShape.circle,
+                    color: Colors.greenAccent.withValues(alpha: 0.2), shape: BoxShape.circle,
                     border: Border.all(color: Colors.greenAccent, width: 3),
-                    boxShadow: [BoxShadow(color: Colors.greenAccent.withOpacity(0.4), blurRadius: 20, spreadRadius: 5)],
+                    boxShadow: [BoxShadow(color: Colors.greenAccent.withValues(alpha: 0.4), blurRadius: 20, spreadRadius: 5)],
                   ),
                   child: const Center(child: Icon(Icons.check_rounded, color: Colors.greenAccent, size: 50)),
                 ),
@@ -1442,11 +1575,13 @@ class _BookingsViewState extends State<BookingsView> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => BookingTicketScreen(
+                          shopId: widget.shopId, // 🟢 ADD THIS LINE!
                           shopName: widget.shopName,
                           category: widget.category,
                           shopImage: widget.shopImage,
                           providerName: _staffs[_frontCardIndex]["name"]!,
-                          date: "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}",                          time: _times[_selectedTimeIndex],
+                          date: "${_dates[_selectedDateIndex]['day']}, ${_dates[_selectedDateIndex]['date']} ${_dates[_selectedDateIndex]['month']}",
+                          time: _times[_selectedTimeIndex],
                           totalPrice: "RM$_totalPrice",
                           bookingId: _generatedBookingId,
                         ),
@@ -1500,10 +1635,10 @@ class _BookingsViewState extends State<BookingsView> {
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4)),
+          color: isSelected ? Colors.blue : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 10, spreadRadius: 0)] : [],
+          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 0)] : [],
         ),
         child: Column(
           children: [
@@ -1535,9 +1670,9 @@ class _BookingsViewState extends State<BookingsView> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.1) : (isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.2)),
+          color: isSelected ? Colors.blue.withValues(alpha: 0.1) : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.2)),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isSelected ? Colors.blue : Colors.white.withOpacity(isDark ? 0.05 : 0.4), width: 1.5),
+          border: Border.all(color: isSelected ? Colors.blue : Colors.white.withValues(alpha: isDark ? 0.05 : 0.4), width: 1.5),
         ),
         child: Row(
           children: [

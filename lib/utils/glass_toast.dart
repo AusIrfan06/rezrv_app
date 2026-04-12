@@ -23,9 +23,9 @@ void showGlassToast(BuildContext context, String message, {bool isError = false}
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? color.withOpacity(0.15) : color.withOpacity(0.08),
+              color: isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+              border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

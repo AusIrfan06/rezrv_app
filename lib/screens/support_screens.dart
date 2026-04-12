@@ -19,11 +19,11 @@ Widget _buildBackgroundGlows(bool isDark) {
     children: [
       Positioned(
         top: -50, right: -100,
-        child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withOpacity(isDark ? 0.08 : 0.15))),
+        child: Container(width: 350, height: 350, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blueAccent.withValues(alpha: isDark ? 0.08 : 0.15))),
       ),
       Positioned(
         bottom: 100, left: -100,
-        child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withOpacity(isDark ? 0.06 : 0.12))),
+        child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purpleAccent.withValues(alpha: isDark ? 0.06 : 0.12))),
       ),
     ],
   );
@@ -75,7 +75,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 16.0), settings: _getGlassSettings(isDark),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6))),
+                      decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6))),
                       child: TextField(
                         style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
@@ -99,9 +99,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(isExpanded ? 0.08 : 0.03) : Colors.white.withOpacity(isExpanded ? 0.6 : 0.3),
+                          color: isDark ? Colors.white.withValues(alpha: isExpanded ? 0.08 : 0.03) : Colors.white.withValues(alpha: isExpanded ? 0.6 : 0.3),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isExpanded ? Colors.blueAccent : Colors.white.withOpacity(isDark ? 0.05 : 0.4), width: 1.5),
+                          border: Border.all(color: isExpanded ? Colors.blueAccent : Colors.white.withValues(alpha: isDark ? 0.05 : 0.4), width: 1.5),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,12 +181,12 @@ class ContactUsScreen extends StatelessWidget {
       useOwnLayer: true, quality: GlassQuality.standard, shape: LiquidRoundedSuperellipse(borderRadius: 20.0), settings: _getGlassSettings(isDark),
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6))),
+        decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6))),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: Colors.blueAccent.withValues(alpha: 0.1), shape: BoxShape.circle),
               child: HugeIcon(icon: icon, color: Colors.blueAccent, size: 24),
             ),
             const SizedBox(width: 16),

@@ -755,7 +755,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
             )
@@ -914,11 +914,11 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                         builder: (context, markers) {
                           return Container(
                             decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.9),
+                                color: Colors.blue.withValues(alpha: 0.9),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 2),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.blue.withOpacity(0.5), blurRadius: 10, spreadRadius: 2)
+                                  BoxShadow(color: Colors.blue.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 2)
                                 ]
                             ),
                             child: Center(
@@ -1011,7 +1011,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1026,13 +1026,13 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
             padding: padding,
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(
+                  ? Colors.white.withValues(alpha: 
                   0.08) // Dark mode: faint white tint
-                  : Colors.white.withOpacity(0.6),
+                  : Colors.white.withValues(alpha: 0.6),
               // Light mode: milky white tint
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
-                color: Colors.white.withOpacity(isDark ? 0.15 : 0.6),
+                color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.6),
                 width: 1.0,
               ),
             ),
@@ -1059,12 +1059,12 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+                    color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
                     width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1081,7 +1081,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                 isDark ? Colors.white : _lightModeGray))
                             : HugeIcon(icon: HugeIcons.strokeRoundedSearch01,
                             color: isDark ? Colors.white70 : _lightModeGray
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                             size: 20,
                             strokeWidth: 2.0)
                     ),
@@ -1098,7 +1098,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                         decoration: InputDecoration(
                             hintText: AppLocalizations.of(context)!.searchHint,
                             hintStyle: TextStyle(
-                                color: isDark ? Colors.white38 : _lightModeGray.withOpacity(0.4),
+                                color: isDark ? Colors.white38 : _lightModeGray.withValues(alpha: 0.4),
                                 fontSize: 14),
                             border: InputBorder.none,
                             isDense: true),
@@ -1108,7 +1108,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                       GestureDetector(onTap: _clearSearch,
                           child: Icon(Icons.close, size: 18,
                               color: isDark ? Colors.white70 : _lightModeGray
-                                  .withOpacity(0.6))),
+                                  .withValues(alpha: 0.6))),
                   ],
                 ),
               ),
@@ -1132,12 +1132,12 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
-                    color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+                    color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
                     width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1195,7 +1195,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                       leading: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: isExpanded ? Colors.blue.withOpacity(0.15) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: isExpanded ? Colors.blue.withValues(alpha: 0.15) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
                         child: HugeIcon(icon: cat['icon'], color: isExpanded ? Colors.blue : (isDark ? Colors.white70 : Colors.black87), size: 20),
                       ),
                       title: Text(cat['label'], style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 15, fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600)),
@@ -1229,7 +1229,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                               ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(AppLocalizations.of(context)!.searchAll(cat['label']), style: const TextStyle(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.bold)),
-                                  trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.blue.withOpacity(0.5), size: 16),
+                                  trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.blue.withValues(alpha: 0.5), size: 16),
                                   onTap: () {
                                     _hideKeyboardOnly();
                                     _executeCategorySearch(cat['id'], cat['label'], isGroup: true);
@@ -1262,7 +1262,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                 );
               }
             }),
-            if (_searchMatchedShops.isNotEmpty) Divider(color: Colors.white.withOpacity(isDark ? 0.1 : 0.3), indent: 24, endIndent: 24),
+            if (_searchMatchedShops.isNotEmpty) Divider(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3), indent: 24, endIndent: 24),
           ],
 
           if (_searchMatchedShops.isNotEmpty) ...[
@@ -1277,7 +1277,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                 leading: Container(
                   width: 36, height: 36,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.3), border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.5), width: 1.0)),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.3), border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.5), width: 1.0)),
                   child: Center(child: _getCategoryIcon(shop, size: 16, color: isDark ? Colors.white : _lightModeGray)),
                 ),
                 title: Text(shop['name'], style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14, fontWeight: FontWeight.w600)),
@@ -1323,7 +1323,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                   contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: isExpanded ? Colors.blue.withOpacity(0.15) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: isExpanded ? Colors.blue.withValues(alpha: 0.15) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
                     child: HugeIcon(icon: group['icon'], color: isExpanded ? Colors.blue : (isDark ? Colors.white70 : Colors.black87), size: 20),
                   ),
                   title: Text(group['label'], style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 15, fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600)),
@@ -1357,7 +1357,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                           ListTile(
                               contentPadding: EdgeInsets.zero,
                               title: Text("All ${group['label']}", style: const TextStyle(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.bold)),
-                              trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.blue.withOpacity(0.5), size: 16),
+                              trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.blue.withValues(alpha: 0.5), size: 16),
                               onTap: () {
                                 _hideKeyboardOnly();
                                 _executeCategorySearch(group['id'], group['label'], isGroup: true);
@@ -1389,10 +1389,10 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         child: Container(
           constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.55),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6),
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(28.0),
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.15 : 0.6), width: 1.0),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))],
+            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.6), width: 1.0),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05), blurRadius: 16, offset: const Offset(0, 6))],
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
@@ -1436,13 +1436,13 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(100),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(
+                                  color: Colors.white.withValues(alpha: 
                                       isDark ? 0.15 : 0.4),
                                   width: 1.0,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(
+                                    color: Colors.black.withValues(alpha: 
                                         isDark ? 0.2 : 0.05),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
@@ -1496,8 +1496,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black
-            .withOpacity(0.05),
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black
+            .withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
       ),
@@ -1506,7 +1506,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.2), shape: BoxShape.circle),
+                color: Colors.grey.withValues(alpha: 0.2), shape: BoxShape.circle),
             child: const HugeIcon(icon: HugeIcons.strokeRoundedSearchRemove,
                 color: Colors.grey,
                 size: 28,
@@ -1587,8 +1587,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
 
   Widget _buildShopPopup(Map<String, dynamic> shop, bool isDark) {
     final frostedGlow = [
-      Shadow(color: Colors.white.withOpacity(0.5), blurRadius: 8),
-      Shadow(color: Colors.black.withOpacity(0.2),
+      Shadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 8),
+      Shadow(color: Colors.black.withValues(alpha: 0.2),
           offset: const Offset(0.5, 0.5),
           blurRadius: 0),
     ];
@@ -1626,17 +1626,17 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                       width: 16,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.03) : Colors
-                            .white.withOpacity(0.1),
+                        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors
+                            .white.withValues(alpha: 0.1),
                         border: Border(
-                          bottom: BorderSide(color: Colors.white.withOpacity(
+                          bottom: BorderSide(color: Colors.white.withValues(alpha: 
                               isDark ? 0.15 : 0.4), width: 1.0),
-                          right: BorderSide(color: Colors.white.withOpacity(
+                          right: BorderSide(color: Colors.white.withValues(alpha: 
                               isDark ? 0.15 : 0.4), width: 1.0),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(
+                            color: Colors.black.withValues(alpha: 
                                 isDark ? 0.2 : 0.05),
                             blurRadius: 12,
                             offset: const Offset(2, 2),
@@ -1658,10 +1658,10 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: isDark ? Colors.white.withOpacity(0.03) : Colors.white
-                      .withOpacity(0.1),
+                  color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white
+                      .withValues(alpha: 0.1),
                   border: Border.all(
-                    color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+                    color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
                     width: 1.0,
                   ),
                 ),
@@ -1695,8 +1695,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.9)
-                                      : _lightModeGray.withOpacity(0.8),
+                                      ? Colors.white.withValues(alpha: 0.9)
+                                      : _lightModeGray.withValues(alpha: 0.8),
                                 )
                             ),
                             Padding(
@@ -1704,7 +1704,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                   horizontal: 6),
                               child: Text("|", style: TextStyle(color: isDark
                                   ? Colors.white24
-                                  : _lightModeGray.withOpacity(0.2),
+                                  : _lightModeGray.withValues(alpha: 0.2),
                                   fontSize: 10)),
                             ),
                             _buildStatusLabel(context, shop),
@@ -1791,7 +1791,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
       width: sel ? 44.0 : 35.0,
       height: sel ? 44.0 : 35.0,
       decoration: BoxDecoration(
-        color: sel ? pinColor : pinColor.withOpacity(0.85),
+        color: sel ? pinColor : pinColor.withValues(alpha: 0.85),
         shape: BoxShape.circle,
         border: Border.all(
             color: Colors.white,
@@ -1800,7 +1800,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         boxShadow: [
           if (!isUnfocused)
             BoxShadow(
-                color: pinColor.withOpacity(
+                color: pinColor.withValues(alpha: 
                     sel ? 0.6 : (status == ShopStatus.closed ? 0.15 : 0.4)),
                 blurRadius: sel ? 16 : 8,
                 spreadRadius: sel ? 4 : 1
@@ -1830,8 +1830,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
 
   Widget _buildCarouselCard(bool isDark, Map<String, dynamic> shop) {
     final frostedGlow = [
-      Shadow(color: Colors.white.withOpacity(0.5), blurRadius: 8),
-      Shadow(color: Colors.black.withOpacity(0.2),
+      Shadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 8),
+      Shadow(color: Colors.black.withValues(alpha: 0.2),
           offset: const Offset(0.5, 0.5),
           blurRadius: 0),
     ];
@@ -1845,16 +1845,16 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         width: 285,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.white
-              .withOpacity(0.1),
+          color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white
+              .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+            color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -2023,12 +2023,12 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                 child: Container(
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+                                      color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
                                       width: 1.0,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -2049,7 +2049,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                           width: 40,
                                           height: 4,
                                           decoration: BoxDecoration(
-                                              color: isDark ? Colors.white24 : _lightModeGray.withOpacity(0.2),
+                                              color: isDark ? Colors.white24 : _lightModeGray.withValues(alpha: 0.2),
                                               borderRadius: BorderRadius.circular(10)))),
                                 ),
                                 const SizedBox(height: 24),
@@ -2085,7 +2085,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                   decoration: BoxDecoration(
-                                                      color: statusColor.withOpacity(0.2),
+                                                      color: statusColor.withValues(alpha: 0.2),
                                                       borderRadius: BorderRadius.circular(8),
                                                       border: Border.all(color: statusColor)),
                                                   child: Text(statusText,
@@ -2197,7 +2197,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                         end: Alignment.topCenter,
                                         colors: [
                                           isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEBE7E3),
-                                          isDark ? const Color(0xFF1A1A1A).withOpacity(0.0) : const Color(0xFFEBE7E3).withOpacity(0.0)
+                                          isDark ? const Color(0xFF1A1A1A).withValues(alpha: 0.0) : const Color(0xFFEBE7E3).withValues(alpha: 0.0)
                                         ])),
                                 child: Row(
                                   children: [
@@ -2265,7 +2265,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                                           decoration: BoxDecoration(
                                               color: Colors.blue,
                                               borderRadius: BorderRadius.circular(18),
-                                              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]),
+                                              boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]),
                                           child: Center(
                                               child: Text(AppLocalizations.of(context)!.rezrvNow, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
                                         ),
@@ -2316,16 +2316,16 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(radius),
           // Sheer tint so it visibly pops out from the completely clear main sheet
           color: overrideColor ??
-              (isDark ? Colors.white.withOpacity(0.05) : Colors.white
-                  .withOpacity(0.4)),
+              (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white
+                  .withValues(alpha: 0.4)),
           border: Border.all(
             color: overrideBorder ??
-                Colors.white.withOpacity(isDark ? 0.15 : 0.4),
+                Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.1 : 0.02),
+              color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.02),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -2431,7 +2431,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                     builder: (context, turns, child) {
                       return Transform.rotate(angle: turns * 2 * math.pi, child: child);
                     },
-                    child: HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, color: isDark ? Colors.white54 : _lightModeGray.withOpacity(0.5), size: 20, strokeWidth: 2.0),
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, color: isDark ? Colors.white54 : _lightModeGray.withValues(alpha: 0.5), size: 20, strokeWidth: 2.0),
                   )
                 ],
               ),
@@ -2444,7 +2444,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                   children: List.generate(7, (i) {
                     int chronologicalIndex = (currentDayIndex + i) % 7;
                     bool isToday = (i == 0);
-                    Color rowColor = isToday ? (isDark ? Colors.white : _lightModeGray) : (isDark ? Colors.white60 : _lightModeGray.withOpacity(0.6));
+                    Color rowColor = isToday ? (isDark ? Colors.white : _lightModeGray) : (isDark ? Colors.white60 : _lightModeGray.withValues(alpha: 0.6));
                     FontWeight rowWeight = isToday ? FontWeight.bold : FontWeight.normal;
 
                     return Padding(
@@ -2479,8 +2479,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         isDark: isDark,
         radius: 20.0,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        overrideColor: Colors.blue.withOpacity(isDark ? 0.1 : 0.15),
-        overrideBorder: Colors.blue.withOpacity(0.3),
+        overrideColor: Colors.blue.withValues(alpha: isDark ? 0.1 : 0.15),
+        overrideBorder: Colors.blue.withValues(alpha: 0.3),
         child: Text(s, style: const TextStyle(
             color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w600)),
       )).toList(),
@@ -2497,8 +2497,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         padding: const EdgeInsets.all(16),
         child: Text(AppLocalizations.of(context)!.noReviewsYet,
             style: TextStyle(
-                color: isDark ? Colors.white.withOpacity(0.5) : _lightModeGray
-                    .withOpacity(0.5))),
+                color: isDark ? Colors.white.withValues(alpha: 0.5) : _lightModeGray
+                    .withValues(alpha: 0.5))),
       );
     }
 
@@ -2530,8 +2530,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
                   ),
                   const SizedBox(height: 8),
                   Text(review['comment'] ?? '', style: TextStyle(color: isDark
-                      ? Colors.white.withOpacity(0.7)
-                      : _lightModeGray.withOpacity(0.8),
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : _lightModeGray.withValues(alpha: 0.8),
                       fontSize: 12,
                       height: 1.4)),
                 ],
@@ -2554,7 +2554,7 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
               fontSize: 14)),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(
-              color: isDark ? Colors.white38 : _lightModeGray.withOpacity(0.5),
+              color: isDark ? Colors.white38 : _lightModeGray.withValues(alpha: 0.5),
               fontSize: 11,
               fontWeight: FontWeight.w500)),
         ],
@@ -2564,8 +2564,8 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
       Container(
         height: 30,
         width: 1,
-        color: isDark ? Colors.white.withOpacity(0.1) : _lightModeGray
-            .withOpacity(0.1),
+        color: isDark ? Colors.white.withValues(alpha: 0.1) : _lightModeGray
+            .withValues(alpha: 0.1),
       );
 
   Widget _buildActionButton(dynamic icon, String? label, bool isDark,
@@ -2583,10 +2583,10 @@ class _ExploreViewState extends State<ExploreView> with TickerProviderStateMixin
         // If it's primary, use the frosted blue.
         // If not, leave it null so it inherits the exact same glass style as the Stats and Hours cards!
         overrideColor: isPrimary
-            ? Colors.blue.withOpacity(isDark ? 0.3 : 0.7)
+            ? Colors.blue.withValues(alpha: isDark ? 0.3 : 0.7)
             : null,
         overrideBorder: isPrimary
-            ? Colors.blue.withOpacity(isDark ? 0.5 : 0.9)
+            ? Colors.blue.withValues(alpha: isDark ? 0.5 : 0.9)
             : null,
         child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -2645,8 +2645,8 @@ class _PulsingUserMarkerState extends State<_PulsingUserMarker> with SingleTicke
   @override
   Widget build(BuildContext context) {
     return Stack(alignment: Alignment.center, children: [
-      FadeTransition(opacity: ReverseAnimation(Tween<double>(begin: 0.0, end: 1.0).animate(_c)), child: ScaleTransition(scale: Tween<double>(begin: 1.0, end: 2.5).animate(_c), child: Container(width: 30, height: 30, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withOpacity(0.3))))),
-      Container(width: 30, height: 30, decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: Colors.blue.withOpacity(0.2), width: 1.5)), child: const Center(child: HugeIcon(icon: HugeIcons.strokeRoundedLocationUser01, color: Colors.blue, size: 20, strokeWidth: 2.5))),
+      FadeTransition(opacity: ReverseAnimation(Tween<double>(begin: 0.0, end: 1.0).animate(_c)), child: ScaleTransition(scale: Tween<double>(begin: 1.0, end: 2.5).animate(_c), child: Container(width: 30, height: 30, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withValues(alpha: 0.3))))),
+      Container(width: 30, height: 30, decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), shape: BoxShape.circle, border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 1.5)), child: const Center(child: HugeIcon(icon: HugeIcons.strokeRoundedLocationUser01, color: Colors.blue, size: 20, strokeWidth: 2.5))),
     ]);
   }
 }

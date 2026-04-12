@@ -172,11 +172,11 @@ class _HomeViewState extends State<HomeView> {
             ),
             Positioned(
               top: -100, left: -100,
-              child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withOpacity(isDark ? 0.2 : 0.35))),
+              child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withValues(alpha: isDark ? 0.2 : 0.35))),
             ),
             Positioned(
               bottom: 100, right: -50,
-              child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.indigo.withOpacity(isDark ? 0.15 : 0.25))),
+              child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.indigo.withValues(alpha: isDark ? 0.15 : 0.25))),
             ),
             Positioned.fill(
               child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60), child: const SizedBox()),
@@ -225,8 +225,8 @@ class _HomeViewState extends State<HomeView> {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: isDark ? Colors.white10 : Colors.black12,
-                                      border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 2),
-                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                                      border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 2),
+                                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
                                     ),
                                     child: ValueListenableBuilder<String>(
                                       valueListenable: UserData.userProfilePic,
@@ -429,7 +429,7 @@ class _HomeViewState extends State<HomeView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(l10n.recommended, style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text(l10n.seeAll, style: TextStyle(color: Colors.blue.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.bold)),                        ],
+                          Text(l10n.seeAll, style: TextStyle(color: Colors.blue.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.bold)),                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -461,9 +461,9 @@ class _HomeViewState extends State<HomeView> {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.5),
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.5),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
+            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
           ),
           child: IconButton(
             icon: Icon(icon, color: iconColor, size: 22),
@@ -487,18 +487,18 @@ class _HomeViewState extends State<HomeView> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
 
         // 🟢 TWEAK 1: SHORTER, TIGHTER SHADOWS
         boxShadow: [
           BoxShadow(
-            color: ad["colors"][0].withOpacity(0.5), // Slightly less intense
+            color: ad["colors"][0].withValues(alpha: 0.5), // Slightly less intense
             offset: const Offset(0, 8), // 🟢 Reduced drop from 15 to 8
             blurRadius: 15, // 🟢 Reduced blur from 30 to 15
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             offset: const Offset(0, 4), // 🟢 Reduced drop from 5 to 4
             blurRadius: 8,
             spreadRadius: 0,
@@ -526,7 +526,7 @@ class _HomeViewState extends State<HomeView> {
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft, end: Alignment.centerRight,
                         colors: [
-                          ad["colors"][0].withOpacity(1.0),
+                          ad["colors"][0].withValues(alpha: 1.0),
                           Colors.transparent
                         ],
                       ),
@@ -545,7 +545,7 @@ class _HomeViewState extends State<HomeView> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8)),
                   child: Text(l10n.promoLabel, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),                ),
                 const Spacer(),
@@ -624,12 +624,12 @@ class _HomeViewState extends State<HomeView> {
               width: 56,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.blue.withOpacity(0.2)
-                    : (isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.6)),
+                    ? Colors.blue.withValues(alpha: 0.2)
+                    : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.6)),
                 shape: BoxShape.circle,
                 border: isSelected
                     ? Border.all(color: Colors.blue, width: 1.5)
-                    : Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.8), width: 1.5),
+                    : Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.8), width: 1.5),
               ),
               child: Icon(
                 category["icon"],
@@ -711,9 +711,9 @@ class _HomeViewState extends State<HomeView> {
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.5),
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(isDark ? 0.1 : 0.6), width: 1.5),
+                  border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.6), width: 1.5),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,7 +747,7 @@ class _HomeViewState extends State<HomeView> {
                                 behavior: HitTestBehavior.opaque,
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+                                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
                                   child: Icon(
                                     isSaved ? Icons.favorite : Icons.favorite_border,
                                     color: isSaved ? Colors.redAccent : Colors.white,

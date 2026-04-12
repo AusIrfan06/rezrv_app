@@ -130,7 +130,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       // 🟢 Logic: Show the Glassmorphic Setup Dialog
       bool? confirmed = await showDialog<bool>(
         context: context,
-        barrierColor: Colors.black.withOpacity(0.4), // 🟢 ADDED: Dims the background
+        barrierColor: Colors.black.withValues(alpha: 0.4), // 🟢 ADDED: Dims the background
         builder: (context) => _build2FASetupDialog(context),
       );
 
@@ -166,14 +166,14 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4),
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
               width: 1.5,
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))
+              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10))
             ],
           ),
           child: Column(
@@ -183,7 +183,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const HugeIcon(
@@ -227,7 +227,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                       ),
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
@@ -246,7 +246,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                        backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
                       ),
                       onPressed: () => Navigator.pop(context, true), // 🟢 Returns 'true' to enable
                       child: const Text(
@@ -361,7 +361,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -406,7 +406,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -439,7 +439,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -477,7 +477,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(12)
                 ),
                 child: HugeIcon(icon: icon, color: isDark ? Colors.white : Colors.black87, size: 20)
@@ -514,7 +514,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -534,7 +534,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: appLockEnabled ? Colors.blue.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                              color: appLockEnabled ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: HugeIcon(
@@ -649,7 +649,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12)
               ),
               child: HugeIcon(icon: icon, color: isDark ? Colors.white : Colors.black87, size: 20)
@@ -688,7 +688,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           children: [
             Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
                 child: HugeIcon(icon: Platform.isAndroid ? HugeIcons.strokeRoundedAndroid : HugeIcons.strokeRoundedApple, color: isDark ? Colors.white : Colors.black87, size: 20)
             ),
             const SizedBox(width: 16),
@@ -703,7 +703,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       // 🟢 The Green Badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                         child: const Text("THIS DEVICE", style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       ),
                     ],
@@ -727,7 +727,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -737,10 +737,10 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
@@ -751,7 +751,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: HugeIcon(
@@ -786,7 +786,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: Text(
@@ -838,7 +838,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -848,14 +848,14 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10))
               ],
             ),
             child: Column(
@@ -864,7 +864,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const HugeIcon(
@@ -902,7 +902,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
@@ -914,7 +914,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.redAccent.withOpacity(0.1),
+                          backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                         ),
                         onPressed: () {
                           Navigator.pop(context); // Close Dialog
@@ -945,7 +945,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Dialog(
@@ -955,14 +955,14 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.5),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.4),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10))
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 10))
               ],
             ),
             child: Column(
@@ -972,7 +972,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const HugeIcon(
@@ -1016,7 +1016,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: Text(
@@ -1035,7 +1035,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                          backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
                         ),
                         onPressed: () {
                           Navigator.pop(context); // Close dialog first
