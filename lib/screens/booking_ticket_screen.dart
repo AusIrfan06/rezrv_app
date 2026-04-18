@@ -16,6 +16,7 @@ class BookingTicketScreen extends StatefulWidget {
   final String time;
   final String totalPrice;
   final String bookingId;
+  final bool isCancelled;
 
   const BookingTicketScreen({
     super.key,
@@ -28,6 +29,8 @@ class BookingTicketScreen extends StatefulWidget {
     required this.time,
     required this.totalPrice,
     required this.bookingId,
+    this.isCancelled = false,
+
   });
 
   @override
@@ -43,12 +46,16 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
   @override
   void initState() {
     super.initState();
-    _targetDateTime = _parseBookingDateTime(widget.date, widget.time);
-    _updateTimeLeft();
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    // 🟢 ONLY run the timer if the booking is NOT cancelled!
+    if (!widget.isCancelled) {
+      _targetDateTime = _parseBookingDateTime(widget.date, widget.time);
       _updateTimeLeft();
-    });
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        _updateTimeLeft();
+      });
+    }
   }
 
   @override
@@ -172,12 +179,31 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
           // --- SCROLLABLE TICKET AREA ---
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              // 🟢 FIX: Added bottom: 40 padding so it doesn't get stuck behind buttons
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 40),
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  // 🟢 COUNTDOWN BANNER UI
-                  Container(
+                  if (widget.isCancelled)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                          color: Colors.redAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5))
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.redAccent, size: 22),
+                          const SizedBox(width: 12),
+                          Flexible(child: Text("This booking was cancelled", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.redAccent : Colors.red.shade700))),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
                     margin: const EdgeInsets.only(bottom: 20),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
@@ -258,7 +284,7 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                                         color: isDark ? Colors.white : Colors.black,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: 24),
                                     Text(
                                       widget.category,
                                       style: const TextStyle(
@@ -277,7 +303,6 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                         // Dashed Divider 1
                         _buildDashedDivider(isDark),
 
-                        // Middle Section: Booking Details
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(
@@ -298,31 +323,31 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                         // Dashed Divider 2
                         _buildDashedDivider(isDark),
 
-                        // Bottom Section: CLEAN QR Code (No text, no heavy shadows)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white, // Always white so scanners can read it!
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: QrImageView(
-                              data: widget.bookingId,
-                              version: QrVersions.auto,
-                              size: 160.0,
-                              backgroundColor: Colors.white,
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Colors.black87,
+                        // 🟢 Only show QR if NOT cancelled!
+                        if (!widget.isCancelled)
+
+                        // 🟢 Only show QR if NOT cancelled!
+                        if (!widget.isCancelled)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: Colors.black87,
+                              child: QrImageView(
+                                data: widget.bookingId,
+                                version: QrVersions.auto,
+                                size: 160.0,
+                                backgroundColor: Colors.white,
+                                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black87),
+                                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black87),
                               ),
                             ),
-                          ),
-                        )
+                          )
+                        else
+                          const SizedBox(height: 24), // Gives the card some breathing room at the bottom if cancelled!
                       ],
                     ),
                   ),
@@ -333,28 +358,22 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
 
           // --- STICKY BOTTOM ACTIONS (1:1:2 Layout) ---
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF13171B) : const Color(0xFFE5ECF1),
-                boxShadow: [
-                  BoxShadow(
-                      color: isDark ? Colors.black26 : Colors.black12,
-                      blurRadius: 10,
-                      offset: const Offset(0, -4)
-                  )
-                ]
+                boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.black12, blurRadius: 10, offset: const Offset(0, -4))]
             ),
             child: SafeArea(
               top: false,
+              bottom: true, // 🟢 Helps prevent iOS swipe bar overlap
               child: Row(
                 children: [
-                  // 🟢 1 Flex: Call Button (Icon Only)
                   Expanded(
-                    flex: 1,
+                    flex: 1, // 🟢 Force 1 flex
                     child: ElevatedButton(
                       onPressed: _contactOwner,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
                         foregroundColor: isDark ? Colors.white : Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         elevation: 0,
@@ -367,14 +386,12 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-
-                  // 🟢 1 Flex: Directions Button (Icon Only)
                   Expanded(
-                    flex: 1,
+                    flex: 1, // 🟢 Force 1 flex
                     child: ElevatedButton(
                       onPressed: () {}, // Add map logic
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
                         foregroundColor: isDark ? Colors.white : Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         elevation: 0,
@@ -388,36 +405,39 @@ class _BookingTicketScreenState extends State<BookingTicketScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // 🟢 2 Flex: Rezrv Again Button
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Push them right back into the checkout flow for this shop!
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BookingsView(
-                              shopId: widget.shopId,
-                              shopName: widget.shopName,
-                              category: widget.category,
-                              shopImage: widget.shopImage,
+                  // 🟢 ONLY show the big "Rezrv Again" button if it was cancelled
+                  if (widget.isCancelled) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Push them right back into the checkout flow for this shop!
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookingsView(
+                                shopId: widget.shopId,
+                                shopName: widget.shopName,
+                                category: widget.category,
+                                shopImage: widget.shopImage,
+                              ),
                             ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
                         ),
+                        child: const Text("Rezrv Again", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
-                      child: const Text("Rezrv Again", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
-                  ),
+                  ]
                 ],
               ),
             ),

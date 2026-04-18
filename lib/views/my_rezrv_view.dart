@@ -315,7 +315,7 @@ class _MyRezrvViewState extends State<MyRezrvView> {
         Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
             builder: (_) => BookingTicketScreen(
-              shopId: item['shopId'] ?? '', // 🟢 Safely passing the shop ID!
+              shopId: item['shopId'] ?? '',
               shopName: item['title'],
               category: item['category'],
               shopImage: item['img'],
@@ -324,6 +324,7 @@ class _MyRezrvViewState extends State<MyRezrvView> {
               time: item['time'],
               totalPrice: item['totalPrice'],
               bookingId: item['id'],
+              isCancelled: isCancelled, // 🟢 ADD THIS SO IT KNOWS TO HIDE THE TIMER!
             ),
           ),
         );
@@ -332,9 +333,9 @@ class _MyRezrvViewState extends State<MyRezrvView> {
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey[100],
+          color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey[100],
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -342,7 +343,7 @@ class _MyRezrvViewState extends State<MyRezrvView> {
               width: 80,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
-                image: DecorationImage(image: NetworkImage(item['img']), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withOpacity(isCancelled ? 0.6 : 0.3), BlendMode.darken)),
+                image: DecorationImage(image: NetworkImage(item['img']), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: isCancelled ? 0.6 : 0.3), BlendMode.darken)),
               ),
             ),
             const SizedBox(width: 16),
@@ -363,7 +364,7 @@ class _MyRezrvViewState extends State<MyRezrvView> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: isCancelled ? Colors.redAccent.withOpacity(0.1) : (isDark ? Colors.white10 : Colors.grey[300]), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: isCancelled ? Colors.redAccent.withValues(alpha: 0.1) : (isDark ? Colors.white10 : Colors.grey[300]), borderRadius: BorderRadius.circular(12)),
                 child: Text(isCancelled ? "Cancelled" : "Done", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isCancelled ? Colors.redAccent : (isDark ? Colors.white54 : Colors.black54))),
               ),
             ),

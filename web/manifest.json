@@ -1,11 +1,11 @@
 {
-    "name": "rezrv",
-    "short_name": "rezrv",
+    "name": "REZRV Booking",
+    "short_name": "REZRV",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new reservation app",
+    "background_color": "#13171B",
+    "theme_color": "#1976D2",
+    "description": "The ultimate barber and service booking platform.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
