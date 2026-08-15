@@ -2,7 +2,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 // 🟢 GLOBAL GLASSMORPHIC TOAST HELPER
-void showGlassToast(BuildContext context, String message, {bool isError = false}) {
+void showGlassToast(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final color = isError ? Colors.redAccent : Colors.green;
 
@@ -15,7 +19,12 @@ void showGlassToast(BuildContext context, String message, {bool isError = false}
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent, // Hides the ugly default black box
       duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 20), // Floats above the bottom
+      margin: const EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        20,
+      ), // Floats above the bottom
       content: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -23,17 +32,24 @@ void showGlassToast(BuildContext context, String message, {bool isError = false}
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08),
+              color: isDark
+                  ? color.withValues(alpha: 0.15)
+                  : color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+              border: Border.all(
+                color: color.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                    isError ? Icons.error_outline_rounded : Icons.check_circle_rounded,
-                    color: color,
-                    size: 20
+                  isError
+                      ? Icons.error_outline_rounded
+                      : Icons.check_circle_rounded,
+                  color: color,
+                  size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
